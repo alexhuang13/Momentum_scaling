@@ -1,0 +1,14 @@
+# MNIST + fully-connected network (setting.md 2.1)
+dataset: mnist
+model: fc
+lr: 0.01          # shared fixed LR for SGD / Heavy Ball / Nesterov
+rho: 0.9
+weight-decay: 0.0
+epochs: 30
+batch-size: 128
+seeds: [0, 1, 2]
+
+# experiment B (D = B*K) knobs
+k-min: 7          # K from 2^7 = 128 steps ...
+k-max: 14         # ... to 2^14 = 16384 steps
+n-points: 8

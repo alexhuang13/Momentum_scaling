@@ -1,0 +1,15 @@
+# CIFAR-10 + 3-layer CNN (setting.md 2.2)
+# Default padding='same' reproduces the ~576k parameter count (see models.py note).
+dataset: cifar10
+model: cnn
+lr: 0.01
+rho: 0.9
+weight-decay: 0.0005
+epochs: 60
+batch-size: 128
+seeds: [0, 1, 2]
+use-bn: false     # set true for the BatchNorm variant (drops FC dropout)
+
+k-min: 8
+k-max: 15
+n-points: 8
