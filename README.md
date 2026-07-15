@@ -117,7 +117,7 @@ python -m experiments.run_baseline --config configs/cifar_cnn.yaml      --out re
 python -m experiments.run_baseline --config configs/cifar_resnet32.yaml --out results/cifar_resnet32_baseline.json
 ```
 
-### Experiment B: compute-budget scaling
+### Experiment B: data-budget scaling
 
 `experiments/run_scaling.py` fixes batch size `B`, sweeps the number of optimizer steps `K`, and uses
 
