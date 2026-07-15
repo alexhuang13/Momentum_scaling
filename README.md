@@ -1,94 +1,167 @@
-# Momentum: Scaling Laws for SGD, Heavy Ball, and Nesterov
+# Momentum Scaling
 
-This repository studies three first-order optimizers — **SGD**, **Heavy Ball
-(HB)**, and **Nesterov (NAG)** — from two complementary angles: an exactly
-solvable theory on synthetic linear regression, and an empirical study on real
-image classifiers (MNIST / CIFAR-10). The two use the *same* optimizer
-definitions, so the theory and the experiments line up.
+This repository studies scaling behavior for three first-order optimizers:
+
+- **SGD**
+- **Heavy Ball (HB)**
+- **Nesterov acceleration (NAG)**
+
+The project has two complementary parts:
+
+1. `linear_regression/`: synthetic diagonal linear-regression experiments where the population excess loss is computed analytically.
+2. `cifar_mnist/`: PyTorch experiments on MNIST and CIFAR-10 classifiers using the same optimizer update conventions.
 
 ## Repository layout
 
-```
-linear_regression/       Theory + exactly-solvable synthetic experiments
-  linear_regression_scaling.ipynb   scaling-law notebook (numpy + matplotlib)
-
-cifar_mnist/             Empirical study on real networks (PyTorch)
-  experiments/           models, optimizers, data, training, run scripts, plotting
-  configs/               per-(model, dataset) hyperparameters
-  requirements.txt
-  README.md              detailed setup, model specs, and run instructions
-```
-
-## `linear_regression/` — theory
-
-A diagonal linear-regression model with power-law spectrum
-`λ_j ≍ j^{-β}` and source condition `θ*_j² ≍ j^{-1-(s-1)β}`, where the population
-excess loss is computed **analytically**. The notebook runs HB / NAG / SGD under
-the hyper-parameter scaling prescribed by the theory and produces the key
-deliverable: **excess loss vs. data budget `D`** on log-log axes, with fitted
-slopes matching the predicted exponent
-
-```
-E[E_K] ≍ D^{-s/(s+1)}.
-```
-
-The notebook also states the two-sided heavy-ball scaling law it is verifying,
-
-```
-E[E_t] ≍ ρ^t + ((1-ρ)/(ηt))^s + ησ²/(B(1-ρ)) + (self-induced noise terms).
+```text
+.
+├── README.md
+├── linear_regression/
+│   ├── D_scaling.ipynb      # synthetic excess-loss scaling vs data budget D
+│   └── CBS.ipynb            # fixed-D batch-size sweep / critical-batch-size study
+└── cifar_mnist/
+    ├── README.md            # detailed image-experiment notes
+    ├── requirements.txt
+    ├── configs/
+    │   ├── mnist_fc.yaml
+    │   ├── cifar_cnn.yaml
+    │   └── cifar_resnet32.yaml
+    └── experiments/
+        ├── data.py          # MNIST / CIFAR-10 dataloaders and augmentation
+        ├── models.py        # FCNet, SmallCNN, ResNet-32
+        ├── optimizers.py    # hand-written SGD / HB / NAG updates
+        ├── train.py         # single-run training loop and metrics
+        ├── run_baseline.py  # experiment A: optimizer comparison
+        ├── run_scaling.py   # experiment B: D = B*K compute scaling
+        └── plot.py          # plotting utilities
 ```
 
-Self-contained: only `numpy` + `matplotlib`.
+Generated data, caches, JSON logs, and figures are written under local `data/` or `results/` directories when experiments are run.
 
-## `cifar_mnist/` — experiments
+## Optimizer conventions
 
-Ports the study to real networks. The three optimizers are **hand-written** to
-match the notebook's update rules exactly (not `torch.optim`'s Nesterov, which
-uses a different LR convention):
+The optimizers in `cifar_mnist/experiments/optimizers.py` are implemented by hand so that the image experiments match the update rules used in the linear-regression notebooks.
 
-```
-SGD        θ_{t+1} = θ_t - η·g(θ_t)
-HeavyBall  θ_{t+1} = θ_t - η·g(θ_t)          + ρ·(θ_t - θ_{t-1})
-Nesterov   θ_{t+1} = θ_t - η·g(θ_t + ρ·m_t)  + ρ·(θ_t - θ_{t-1})
+```text
+SGD        theta_{t+1} = theta_t - eta * g(theta_t)
+HeavyBall  theta_{t+1} = theta_t - eta * g(theta_t) + rho * (theta_t - theta_{t-1})
+Nesterov   theta_{t+1} = theta_t - eta * g(theta_t + rho * m_t) + rho * (theta_t - theta_{t-1})
 ```
 
-Two experiments:
+This is intentional: `torch.optim.SGD(..., nesterov=True)` uses a different learning-rate convention for Nesterov momentum.
 
-* **A — baseline comparison**: fixed dataset, multi-epoch, all three optimizers
-  under a **shared fixed learning rate** and `ρ=0.9`; compares train-loss /
-  test-loss / test-accuracy curves.
-* **B — compute-budget scaling**: fixed batch size `B`, sweep the step count `K`,
-  plot final **test loss vs. `D = B·K`** on log-log axes and fit a slope — the
-  real-network analogue of the notebook's *excess loss vs. D* curve.
+## `linear_regression/`: synthetic scaling experiments
 
-Models (from the experimental setting): fully-connected net for MNIST (~99k
-params), a 3-layer CNN (~576k) and ResNet-32 (~467k) for CIFAR-10. See
-[`cifar_mnist/README.md`](cifar_mnist/README.md) for full architecture specs,
-install steps, and exact run commands.
+The notebooks study a diagonal linear-regression model with power-law spectrum and source condition. Because the model is synthetic, the population excess loss can be evaluated exactly.
 
-> **Honesty note on B.** On real data the spectral / source exponents `(s, β)`
-> are unknown, so — unlike the notebook — `B, K, ρ` are **not** scaled with `D`
-> (that scaling requires the exponents). Experiment B is therefore an *empirical*
-> power-law of loss vs. compute, not a reproduction of the exact `D^{-s/(s+1)}`
-> rate.
+### `D_scaling.ipynb`
 
-## Quick start
+Sweeps the data/compute budget `D` and compares final excess loss for SGD, Heavy Ball, and Nesterov.
 
-Theory (no GPU needed):
+Main purpose:
+
+- use the theory-prescribed scaling of batch size `B`, steps `K`, and momentum `rho` with `D`;
+- plot final excess loss vs `D` on log-log axes;
+- compare the measured slope with the predicted rate
+
+```text
+E[E_K] ~ D^{-s/(s+1)}.
+```
+
+### `CBS.ipynb`
+
+Fixes the total budget `D` and sweeps batch size `B`, with `K = floor(D / B)`.
+
+Main purpose:
+
+- study the tradeoff between small-batch noise and large-batch step scarcity;
+- compare SGD, Heavy Ball, and Nesterov across batch sizes;
+- cache results in `linear_regression/results/` when enabled in the notebook.
+
+### Running the notebooks
 
 ```bash
 cd linear_regression
-jupyter notebook linear_regression_scaling.ipynb
+python -m pip install numpy matplotlib jupyter
+jupyter notebook D_scaling.ipynb
+jupyter notebook CBS.ipynb
 ```
 
-Experiments (on a GPU machine; Python 3.10–3.12 for torch wheels):
+## `cifar_mnist/`: MNIST / CIFAR-10 experiments
+
+This directory ports the optimizer comparison to real image-classification tasks.
+
+### Config matrix
+
+| Config | Dataset | Model | Main setting |
+|---|---|---|---|
+| `configs/mnist_fc.yaml` | MNIST | fully-connected net | `lr=0.01`, `rho=0.9`, `epochs=30`, `batch_size=128` |
+| `configs/cifar_cnn.yaml` | CIFAR-10 | 3-layer CNN | `lr=0.01`, `rho=0.9`, `epochs=60`, `batch_size=128` |
+| `configs/cifar_resnet32.yaml` | CIFAR-10 | ResNet-32 | `lr=0.1`, `rho=0.9`, `epochs=80`, `batch_size=128` |
+
+Models are defined in `experiments/models.py`. A quick parameter-count check is available with:
 
 ```bash
 cd cifar_mnist
-python -m venv .venv && source .venv/bin/activate
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-pip install -r requirements.txt
-python -m experiments.run_baseline --config configs/mnist_fc.yaml --seeds 0 --epochs 3   # smoke test
+python -m experiments.models
 ```
 
-See [`cifar_mnist/README.md`](cifar_mnist/README.md) for the full run matrix.
+### Experiment A: baseline optimizer comparison
+
+`experiments/run_baseline.py` trains SGD, Heavy Ball, and Nesterov under a shared fixed learning rate and compares training loss, test loss, and test accuracy.
+
+```bash
+cd cifar_mnist
+python -m experiments.run_baseline --config configs/mnist_fc.yaml       --out results/mnist_fc_baseline.json
+python -m experiments.run_baseline --config configs/cifar_cnn.yaml      --out results/cifar_cnn_baseline.json
+python -m experiments.run_baseline --config configs/cifar_resnet32.yaml --out results/cifar_resnet32_baseline.json
+```
+
+### Experiment B: compute-budget scaling
+
+`experiments/run_scaling.py` fixes batch size `B`, sweeps the number of optimizer steps `K`, and uses
+
+```text
+D = B * K
+```
+
+as the processed-sample compute budget. The script records final test loss and fits a log-log slope for each optimizer.
+
+```bash
+cd cifar_mnist
+python -m experiments.run_scaling --config configs/mnist_fc.yaml       --out results/mnist_fc_scaling.json
+python -m experiments.run_scaling --config configs/cifar_cnn.yaml      --out results/cifar_cnn_scaling.json
+python -m experiments.run_scaling --config configs/cifar_resnet32.yaml --out results/cifar_resnet32_scaling.json
+```
+
+### Plotting
+
+```bash
+cd cifar_mnist
+python -m experiments.plot --baseline results/mnist_fc_baseline.json --out results/mnist_fc_baseline.png
+python -m experiments.plot --scaling  results/mnist_fc_scaling.json  --out results/mnist_fc_scaling.png
+```
+
+## Installation for image experiments
+
+From `cifar_mnist/`:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+
+# Choose the PyTorch build for your machine from https://pytorch.org/get-started/locally/.
+# Example for CUDA 12.1:
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+pip install -r requirements.txt
+```
+
+For macOS CPU/MPS environments, use the platform-appropriate PyTorch install command from the PyTorch website instead of the CUDA example.
+
+## Notes and caveats
+
+- The linear-regression notebooks are the theory-controlled setting: the source/spectrum parameters are known, so the prescribed scaling with `D` can be tested directly.
+- The MNIST/CIFAR-10 scaling experiment is empirical. On real data the source/spectrum exponents are unknown, so `B`, `K`, and `rho` are not scaled with `D` in the same theory-prescribed way.
+- When running with a YAML config, the config file defines the main experimental recipe. To change a recipe, edit the corresponding file in `cifar_mnist/configs/` or run the script without `--config` and pass CLI values manually.
+- See `cifar_mnist/README.md` for more details on architectures, augmentation, plotting, and expected behavior.
