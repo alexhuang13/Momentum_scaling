@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""GPU stability phase diagram for HB and Nesterov on diagonal linear regression.
+"""GPU stability phase diagram for SGD, HB, and Nesterov on diagonal linear regression.
 
 Default setting matches linear_regression/cpu/D_scaling.ipynb and is intended for
-an NVIDIA H20 / CUDA machine.  Because the default damping is extremely small
-(1-rho = 2e-10), the default dtype is float64; float32 would round rho to 1.
+an NVIDIA H20 / CUDA machine. Because the default damping for momentum methods is
+extremely small (1-rho = 2e-10), the default dtype is float64; float32 would round
+rho to 1. SGD is included as an empirical boundary only, without a theory line.
 """
 
 from __future__ import annotations
@@ -18,11 +19,11 @@ from pathlib import Path
 import numpy as np
 import torch
 
-ALGOS = {"HB": "hb", "Nesterov": "nag"}
+ALGOS = {"SGD": "sgd", "HB": "hb", "Nesterov": "nag"}
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="GPU stability phase diagram for HB/Nesterov")
+    p = argparse.ArgumentParser(description="GPU stability phase diagram for SGD/HB/Nesterov")
 
     # Problem setting copied from cpu/D_scaling.ipynb.
     p.add_argument("--beta", type=float, default=2.0)
@@ -128,6 +129,7 @@ def run_stability(
 ) -> dict[str, float | int | bool | str]:
     gen = torch.Generator(device=lam.device)
     gen.manual_seed(int(seed))
+    rho_eff = 0.0 if algo == "sgd" else rho
 
     delta = -theta_star.clone()
     delta_prev = delta.clone()
@@ -138,9 +140,9 @@ def run_stability(
 
     for t in range(1, steps + 1):
         momentum = delta - delta_prev
-        eval_delta = delta + rho * momentum if algo == "nag" else delta
+        eval_delta = delta + rho_eff * momentum if algo == "nag" else delta
         g = grad_delta_chunked(eval_delta, B, lam, sigma, chunk, gen)
-        delta_new = delta - eta * g + rho * momentum
+        delta_new = delta - eta * g + rho_eff * momentum
         delta_prev, delta = delta, delta_new
 
         loss = float(excess_loss(delta, lam).item())
@@ -174,7 +176,7 @@ def make_grids(args: argparse.Namespace) -> tuple[np.ndarray, np.ndarray]:
 
 def tag_from_args(args: argparse.Namespace) -> str:
     tag = (
-        f"stability_gpu_beta{args.beta:g}_s{args.s_value:g}_dim{args.dim}_"
+        f"stability_gpu_3alg_beta{args.beta:g}_s{args.s_value:g}_dim{args.dim}_"
         f"B{args.b_min_exp}-{args.b_max_exp}_eta{args.eta_points}_"
         f"omrho{args.one_minus_rho:.0e}_K{args.steps}_w{args.window}_thr{args.threshold:g}_"
         f"dtype{args.dtype}_seed{args.seed}"
@@ -330,8 +332,9 @@ def plot_boundary_pdf(
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    fig, ax = plt.subplots(figsize=(7.4, 5.6))
+    fig, ax = plt.subplots(figsize=(7.8, 5.8))
     styles = {
+        "SGD": ("tab:green", "^", None, None),
         "HB": ("tab:blue", "o", 1.0, r"HB fit: $\eta \propto B(1-\rho)$"),
         "Nesterov": (
             "tab:orange",
@@ -341,37 +344,84 @@ def plot_boundary_pdf(
         ),
     }
 
+    boundaries: dict[str, np.ndarray] = {}
+    refs: dict[str, np.ndarray] = {}
     for aidx, name in enumerate(ALGOS.keys()):
-        color, marker, power, theory_label = styles[name]
+        _color, _marker, power, _theory_label = styles[name]
         boundary = max_stable_eta(stable[aidx], eta_grid)
+        boundaries[name] = boundary
+        if power is not None:
+            C = fit_prefactor(boundary, b_list, power, args.one_minus_rho)
+            refs[name] = C * (b_list.astype(float) ** power) * args.one_minus_rho
+
+    eta_low = float(np.min(eta_grid))
+    eta_high = float(np.max(eta_grid))
+    hb_region = np.where(np.isfinite(boundaries["HB"]), boundaries["HB"], refs["HB"])
+    nes_region = np.where(np.isfinite(boundaries["Nesterov"]), boundaries["Nesterov"], refs["Nesterov"])
+    hb_region = np.clip(hb_region, eta_low, eta_high)
+    nes_region = np.clip(nes_region, eta_low, eta_high)
+
+    ax.fill_between(
+        b_list,
+        eta_low,
+        hb_region,
+        color="#c6dbef",
+        alpha=0.55,
+        label="below HB boundary (blue)",
+        zorder=0,
+    )
+    ax.fill_between(
+        b_list,
+        hb_region,
+        nes_region,
+        color="#ddd6f3",
+        alpha=0.60,
+        label="between HB and Nesterov boundaries",
+        zorder=0,
+    )
+    ax.fill_between(
+        b_list,
+        nes_region,
+        eta_high,
+        color="#fdd0a2",
+        alpha=0.50,
+        label="above Nesterov boundary (orange)",
+        zorder=0,
+    )
+
+    for name in ALGOS.keys():
+        color, marker, _power, theory_label = styles[name]
+        boundary = boundaries[name]
         mask = np.isfinite(boundary) & (boundary > 0)
         ax.plot(
             b_list[mask],
             boundary[mask],
             color=color,
             marker=marker,
-            linewidth=2.2,
+            linewidth=2.4,
             label=rf"{name}: empirical max stable $\eta$",
+            zorder=3,
         )
-        C = fit_prefactor(boundary, b_list, power, args.one_minus_rho)
-        ref = C * (b_list.astype(float) ** power) * args.one_minus_rho
-        ax.plot(b_list, ref, "--", color=color, alpha=0.85, linewidth=2.0, label=theory_label)
+        if theory_label is not None:
+            ax.plot(b_list, refs[name], "--", color=color, alpha=0.9, linewidth=2.0, label=theory_label, zorder=2)
 
     ax.set_xscale("log", base=2)
     ax.set_yscale("log")
+    ax.set_xlim(2 ** args.b_min_exp, b_list[-1])
+    ax.set_ylim(eta_low, eta_high)
     ax.set_xlabel(r"batch size  $B$")
     ax.set_ylabel(r"learning rate stability boundary  $\eta$")
-    ax.set_title("HB vs Nesterov stability boundary")
+    ax.set_title("SGD, HB, and Nesterov stability regions")
     ax.grid(True, which="both", alpha=0.3)
     legend_title = (
-        rf"$1-\rho={args.one_minus_rho:.0e}$, $\beta={args.beta:g}$, $s={args.s_value:g}$"
+        rf"$1-\rho={args.one_minus_rho:.0e}$ for HB/NAG, $\beta={args.beta:g}$, $s={args.s_value:g}$"
         + "\n"
         + rf"$K={args.steps}$, MA window={args.window}, threshold={args.threshold:g}"
         + "\n"
         + rf"$B=2^{{{args.b_min_exp}}}\ldots2^{{{args.b_max_exp}}}$, "
         + rf"$\eta\in[{args.eta_min:.0e},{args.eta_max:.0e}]$"
     )
-    ax.legend(title=legend_title, fontsize=8, title_fontsize=8, loc="best")
+    ax.legend(title=legend_title, fontsize=7.5, title_fontsize=8, loc="best")
     fig.tight_layout()
     fig.savefig(pdf_path, bbox_inches="tight")
     plt.close(fig)
@@ -399,7 +449,7 @@ def main():
         lam, theta_star = build_problem(args.dim, args.beta, args.s_value, device, dtype)
         e0 = float(excess_loss(-theta_star, lam).item())
         print(f"initial excess loss E0={e0:.6g}")
-        print(f"rho={rho:.16g}  one-minus-rho={args.one_minus_rho:.3e}")
+        print(f"rho={rho:.16g}  one-minus-rho={args.one_minus_rho:.3e} for HB/NAG; SGD uses rho=0")
         print(f"B grid: 2^{args.b_min_exp}..2^{args.b_max_exp} ({len(b_list)} values)")
         print(f"eta grid: {args.eta_min:.1e}..{args.eta_max:.1e} ({len(eta_grid)} values)")
 
