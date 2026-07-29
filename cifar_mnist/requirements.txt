@@ -1,8 +1,0 @@
-# PyTorch + torchvision. Versions left open so the GPU box resolves a CUDA build.
-# Tested against torch 2.x. On the target GPU machine, install the CUDA build per
-# https://pytorch.org/get-started/locally/ (e.g. the cu121 index), then:
-torch>=2.1
-torchvision>=0.16
-numpy>=1.24
-matplotlib>=3.7
-PyYAML>=6.0

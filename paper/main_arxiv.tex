@@ -1,0 +1,985 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+
+
+\usepackage{natbib}
+\usepackage{wustyle}
+
+\usepackage[colorlinks,citecolor=blue,urlcolor=blue,linkcolor=blue,linktocpage=true,pagebackref=true]{hyperref}
+\renewcommand*{\backref}[1]{}
+\renewcommand*{\backrefalt}[4]{(\small%
+    \ifcase #1 not cited%
+          \or cited on page~#2%
+          \else cited on pages #2%
+    \fi%
+    )}
+    
+\usepackage{multirow}
+\usepackage{makecell}
+
+\usepackage[none]{hyphenat}
+\emergencystretch=3em
+
+\newcommand{\wzl}[1]{\todo[color=red!40, size=footnotesize]{wzl: #1}}
+\newcommand{\lyh}[1]{\todo[color=blue!40, size=footnotesize]{lyh: #1}}
+\newcommand{\zsb}[1]{\todo[color=green!40, size=footnotesize]{zsb: #1}}
+
+\newcommand{\blfootnote}[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}%
+  \footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+
+\title{From Polyak to Nesterov: Landscape-Aware Momentum Methods May Improve Stability and Data Scaling}
+
+\author{
+    Jianan Wang$^{1}$\quad
+    Zixun Huang$^{1}$\quad
+    Kairui Li$^{1}$\quad
+    Lei Wu$^{1,2,3}$
+      \\
+  $^1$School of Mathematical Sciences, Peking University 
+    \\
+  $^2$Center for Machine Learning Research, Peking University
+  \\
+  $^3$AI for Science Institute, Beijing\\[.5em]
+  \texttt{jiananwang25@stu.pku.edu.cn},\quad  \texttt{alexpku@stu.pku.edu.cn}\\ 
+  \texttt{KaiSMS@stu.pku.edu.cn},\quad  \texttt{leiwu@math.pku.edu.cn}\\ 
+}
+\date{\vspace*{-2em}}
+
+\begin{document}
+
+\maketitle
+\blfootnote{All authors contributed equally.}
+
+
+
+\begin{abstract}
+Momentum is widely adopted in modern optimization, yet how it shapes stochastic stability and data scaling remains poorly understood. 
+Existing theory characterizes deterministic acceleration and establishes
+convergence rates for momentum methods, but provides limited
+insight into how the interaction between gradient noise and spectral
+structure differentiates Nesterov from Polyak momentum.
+% Existing theory has focused primarily on deterministic acceleration or {\red xxx}general convergence guarantees in stochastic settings, providing limited insight into why Polyak and Nesterov momentum behave differently under gradient noise. 
+To address this gap, we study both methods in infinite-dimensional power-law kernel regression with Gaussian features and mini-batch gradients, where stochasticity arises from both additive label noise and multiplicative noise. We first characterize their mean-square stability and obtain the learning rate thresholds \(\eta_{\mathrm{stab}}^{\mathrm{Pol}}\eqsim\min\{1,B(1-\rho)\}\) and \(\eta_{\mathrm{stab}}^{\mathrm{Nes}}\eqsim\min\{1,B^\beta(1-\rho)\}\). Building on these stability results, we derive excess-risk scaling laws through a decomposition into signal learning, additive label noise, and multiplicative noise, which reveals how the two momentum mechanisms learn signal and forget noise differently. These dynamical differences lead to scaling results under a fixed data budget \(D=BK\): Polyak momentum retains the SGD-optimal rate \(D^{-\frac {s}{s+1}}\) with a larger critical batch size, whereas Nesterov momentum achieves the strictly faster rate \(D^{-\frac{2s\beta}{2s\beta+\beta+1}+o(1)}\). We also discuss the results when additive noise is absent. Numerical experiments support the predicted stability boundaries, critical batch size behavior, and data scaling rates.
+\end{abstract}
+
+\doparttoc
+\faketableofcontents
+\part{}
+
+\vspace*{-1.5em}
+\section{Introduction}
+
+Optimization remains a central challenge in deep learning~\citep{arora2018optimizationdeepnetworksimplicit, sun2020optimization}, with momentum serving as one of the most widely adopted ingredients in modern training algorithms. The empirical importance of momentum is evidenced by the remarkable success of modern optimizers that incorporate momentum mechanisms, including Adam \citep{kingma2015adam}, Lion \citep{chen2023symbolic}, and Muon \citep{liu2025muon}.  Despite this empirical success, a commensurate theoretical understanding of when and why momentum works remains elusive.
+
+Theoretical understanding of momentum has been developed primarily in full-batch optimization settings \citep{nesterov1983method, su2016differential, ding2025scalinglawstochasticgradient}. Yet modern deep learning relies heavily on mini-batch training, and how the resulting stochastic noise shapes the stability and loss dynamics of momentum methods remains poorly understood \citep{liu2019acceleratingsgdmomentumoverparameterized,gupta2024nesterov}, leaving a substantial gap between existing theory and practice.
+
+
+To bridge this gap, we study the stochastic dynamics of Polyak and Nesterov momentum in power-law kernel (PLK) regression, a tractable model of learning across multiple spectral scales \citep{lin2024scaling,bahri2024explaining,bordelon2025feature,li2026functional}. Our analysis begins with mean-square stability, which determines when multiplicative gradient noise remains controlled. Within the stable regime, the expected excess risk admits a signal learning and noise accumulation decomposition:
+\[
+\EE[\cE(\btheta_k)]
+\eqsim
+\underbrace{\mathcal D(k)}_{\text{signal learning}}
++
+\underbrace{
+\frac{\eta^2}{B}
+\sum_{m=0}^{k-1}
+\mathcal K(k-1-m)
+\bigl(\EE[\cE(\btheta_m)]+\sigma^2\bigr)
+}_{\text{noise accumulation }\mathcal N(k)}.
+\]
+Here, \(\mathcal D(k)\) describes how the target signal is learned, while \(\mathcal K(\tau)\) quantifies how strongly noise injected \(\tau\) iterations earlier persists in the current iterate. This decomposition provides a unified framework for comparing how Polyak and Nesterov momentum balance signal learning and noise accumulation, and for deriving their resulting scaling laws. Our contributions are summarized as follows.
+
+
+
+
+% In this work, we study Polyak and Nesterov momentum in power-law kernel (PLK) regression with Gaussian features, where the eigenspectrum and target follow power-law structures governed by the capacity exponent \(\beta>1\) and source exponent \(s>0\) \citep{lin2024scaling,bahri2024explaining,bordelon2025feature,li2026functional}. This setting provides a tractable infinite-dimensional model in which spectral geometry, momentum, and stochastic gradient noise interact across multiple scales.Following the work of \citet{li2026functional}, we derive loss dynamics for Polyak and Nesterov momentum under constant learning rate. In general, the expected excess risk admits the decomposition
+% \[
+% \EE[\cE(\btheta_k)]
+% \eqsim
+% \underbrace{\mathcal D(k)}_{\text{signal learning}}
+% +
+% \underbrace{
+% \frac{\eta^2}{B}
+% \sum_{m=0}^{k-1}
+% \mathcal K(k-1-m)
+% \bigl(\EE[\cE(\btheta_m)]+\sigma^2\bigr)
+% }_{\text{noise accumulation \(\cN(k)\)}},
+% \]
+% where \(\mathcal D(k)\) describes how the target signal is learned, and \(\mathcal K(\tau)\) measures how much stochastic noise injected \(\tau\) iterations earlier is retained by the current iterate.  At the trajectory level, the expected excess risk decomposes into signal learning and noise accumulation, with the latter determined by how long the dynamics retain noise injected at earlier iterations. This decomposition allows us to compare how Polyak and Nesterov momentum reshape both signal learning and noise propagation, and ultimately connects their stochastic stability to their scaling behavior. Our contributions are summarized as follows.
+
+
+% In deterministic optimization, it is well known that Gradient Descent (GD) on quadratic problems can be accelerated using the momentum methods, such as Polyak's heavy-ball method \citep{polyak1964some} and Nesterov's accelerated gradient method \citep{nesterov1983method}. 
+% However, people often use mini-batch Stochastic Gradient Descent (SGD) in modern machine learning, and whether the same acceleration persists in stochastic setting is considerably less clear.{\red to do}
+
+% Existing scaling-law analyses primarily characterize the final loss after a given training budget, leaving the underlying optimization dynamics largely implicit. 
+% Following the work of \citet{li2026functional}, we derive loss dynamics for Polyak and Nesterov momentum under constant learning rate. In general, the expected excess risk admits the decomposition
+% \[
+% \EE[\cE(\btheta_k)]
+% \eqsim
+% \underbrace{\mathcal D(k)}_{\text{signal learning}}
+% +
+% \underbrace{
+% \frac{\eta^2}{B}
+% \sum_{m=0}^{k-1}
+% \mathcal K(k-1-m)
+% \bigl(\EE[\cE(\btheta_m)]+\sigma^2\bigr)
+% }_{\text{noise accumulation \(\cN(k)\)}},
+% \]
+% where \(\mathcal D(k)\) describes how the target signal is learned, and \(\mathcal K(\tau)\) measures how much stochastic noise injected \(\tau\) iterations earlier is retained by the current iterate. 
+
+% To make this decomposition explicit and compare how different momentum
+% mechanisms reshape its signal and noise components, we study these methods on power-law kernel (PLK) regression with diagonal feature covariance and power-law spectra, following the setup in \citep{li2026functional}. The diagonal structure is made naturally for rotational invariant optimizers. The power-law spectrum and source condition define a infinite-dimensional multi-scale learning problem with capacity exponent \(\beta>1\) and source exponent \(s>0\), enabling explicit scaling laws. The similar set up has been also used in prior work for analysis of scaling laws \citep{lin2024scaling,bahri2024explaining,bordelon2025feature,li2026functional}. Our contribution is summarized as follows.
+
+\begin{figure}[t]
+    \centering
+    \begin{minipage}[c]{0.4\textwidth}
+        \centering
+        \small
+        \renewcommand{\arraystretch}{1.15}
+        \begin{tabular}{lc}
+            \toprule
+            Algorithm
+            &
+            Stability threshold \(\eta_{\mathrm{stab}}\)
+            \\
+            \midrule
+            SGD
+            &
+            \(1\)
+            \\[1mm]
+            Polyak
+            &
+            \(\min\{1,\,B(1-\rho)\}\)
+            \\[1mm]
+            Nesterov
+            &
+            \(\min\{1,\,B^\beta(1-\rho)\}\)
+            \\
+            \bottomrule
+        \end{tabular}
+    \end{minipage}
+    \begin{minipage}[c]{0.55\textwidth}
+        \centering
+        \includegraphics[
+            width=\linewidth
+        ]{figures/rate_diagram.pdf}
+        \label{fig:data_scaling}
+    \end{minipage}
+    \caption{
+        Mean-square stability thresholds and the data scaling behavior of SGD, Polyak momentum, and Nesterov momentum. \textbf{Left:} Critical learning rates for mean-square stability. \textbf{Right:} The batch size phase diagram. Solid lines refer to the optimal loss as a function of the batch size \(B\), see Theorem~\ref{thm:fixed-batch-data-scaling} for derivation.
+    }
+    \label{fig:stability-and-scaling}
+\end{figure}
+\paragraph{Stability boundaries for stochastic momentum methods.} 
+We rigorously characterize the mean-square stability of SGD, Polyak momentum, and Nesterov momentum in the stochastic setting with multiplicative noise.
+% We rigorously derive the stability conditions for SGD and momentum methods. Unlike deterministic stability, stochastic stability is reshaped by multiplicative gradient noise through its feedback into the second-moment dynamics. 
+When \(B\gg1\) and \(1-\rho\ll1\), we summarize the critical learning rates in the left panel of Figure \ref{fig:stability-and-scaling}. These conditions show that the momentum factor \(\rho\) cannot be scaled or scheduled arbitrarily in stochastic optimization. They also reveal a qualitative difference between the two momentum methods: Nesterov's look-ahead correction produces a larger stable parameter region than Polyak momentum.
+
+\paragraph{A scaling-law characterization of momentum loss dynamics.}
+Building on the signal-noise decomposition above, our main results in Section~\ref{sec:scaling law} provide explicit scaling laws for Polyak and Nesterov momentum. For comparison, the SGD scaling law derived by \citet{li2026functional} is
+\begin{equation}
+\label{eq:intro-sgd-scaling-law}
+\EE[\cE(\btheta_k)]
+\eqsim
+(\eta k)^{-s}
++
+\frac{\eta\sigma^2}{B}.
+\end{equation}
+Compared with SGD, both momentum methods accelerate the learning of flat spectral directions through the effective learning rate \(\frac{\eta}{1-\rho}\). However, they exhibit fundamentally different noise-accumulation behavior: 
+\[
+\cN_{\mathrm{SGD}}(k)\eqsim\frac{\eta\sigma^2}{B},\qquad
+\cN_{\mathrm{Pol}}(k)\eqsim\frac{\eta\sigma^2}{B(1-\rho)},\qquad
+\cN_{\mathrm{Nes}}(k)\eqsim\frac{\sigma^2}{B}\min\left\{\frac{\eta}{1-\rho},\left(\frac{\eta}{1-\rho}\right)^{\frac{1}{\beta}}\right\}.
+\]
+Polyak momentum amplifies the contribution of label noise by a factor of $\frac{1}{1-\rho}$, whereas Nesterov's curvature-dependent damping substantially 
+suppresses noise accumulation when \(\frac{\eta}{1-\rho}\gg1\).
+
+\paragraph{Polyak enlarges the critical batch size, while Nesterov accelerates data scaling.}
+The right panel of Figure~\ref{fig:stability-and-scaling} summarizes the optimal data scaling rate at each batch size scale. Specifically, for a fixed data budget \(D=BK\), we set \(B\eqsim D^a\) and optimally tune other parameters. 
+\begin{itemize}
+    \item Polyak momentum shares the same data-optimal rate \(D^{-\frac{s}{s+1}}\) with SGD, but it preserves optimal rate over a substantially larger range of batch sizes, enlarging the critical batch size from \(B_{\max}^{\mathrm{SGD}}\eqsim D^{\frac{s}{s+1}}\) to \(B_{\max}^{\mathrm{Pol}}=D^{\frac{2s+1}{2s+2}-o(1)}.\)
+    \item Nesterov momentum attains the strictly faster optimal rate \(\cE_{\mathrm{opt}}^{\mathrm{Nes}}(D)=D^{-\frac{2s\beta}{2s\beta+\beta+1}+o(1)}.\)
+\end{itemize} 
+
+
+\section{Related Work}
+
+\paragraph{Momentum methods and stochastic acceleration.}
+Polyak's heavy-ball momentum \citep{polyak1964some} and Nesterov-style acceleration \citep{nesterov1983method} are central components of modern optimization \citep{gitman2019understanding,fu2023when,wang2024marginal}, underlying many of the algorithms widely used to train deep learning models, including Adam \citep{kingma2015adam}, Lion \citep{chen2023symbolic}, and Muon \citep{liu2025muon}. A large subsequent literature has investigated their convergence mechanisms \citep{vidyasagar2025convergence,velikanov2023view,liu2020improved,zhang2024optimalityacceleratedsgdhighdimensional,ferbach2025dimensionadaptedmomentumoutscalessgd, yarotsky2025corner}, continuous-time interpretations \citep{su2016differential,wibisono2016variational,shi2022understanding,wilson2021lyapunov,kovachki2021continuous}, exponential-moving-average interpretations \citep{gitman2019understanding,velikanov2023view,li2025understandingema,busbridge2023scaleema}, with much of the theoretical literature deriving convergence-rate upper bounds through Lyapunov analyses \citep{su2016differential,liu2019acceleratingsgdmomentumoverparameterized,gupta2024nesterov}. Despite this progress, when and why momentum accelerates SGD under stochastic gradients remains poorly understood\citep{wang2024marginal,yuan2016influence,gupta2024nesterov}, as generic noise bounds often ignore the spectral dependence of the gradient-noise structure. Through a landscape-aware spectral analysis, we explain when Polyak momentum outperforms SGD and how Nesterov’s
+curvature-dependent damping improves data scaling over Polyak momentum.
+
+\paragraph{Stability of optimization algorithms.}
+The stability of optimization algorithms is a fundamental and technically challenging problem that has long received substantial attention in computational mathematics and deep learning \citep{zhu2019anisotropic,wu2018sgd,nar2018step,ma2021linear,wu2022alignment,wu2023implicit,chemnitz2025characterizing}. Stability has further been used to explain the implicit bias of optimization algorithms and its connection to smoothness and generalization \citep{mulayoff2021implicit,nacson2023implicit,qiao2024stable,wu2023implicit,kaur2023maximum}. While existing analyses focus primarily on gradient descent and SGD, we provide exact mean-square stability characterizations for both Polyak and Nesterov momentum under multiplicative gradient noise in infinite-dimensional power-law kernel regression, and empirically validate their distinct stability boundaries.
+
+\paragraph{Scaling laws and data-optimal training.}
+Data scaling laws quantify how prediction error decreases as the amount of training data increases and have become central to understanding the performance of modern learning systems \citep{hestness2017deep,kaplan2020scaling,hoffmann2022training,grattafiori2024llama,deepseekai2026deepseekv4}. Theoretical explanations have been developed in linear and kernel regression, often under power-law spectral assumptions, where the decay of the loss is governed jointly by the eigenspectrum, target regularity, and optimization dynamics \citep{sharma2022scaling,hutter2021learning,maloney2022solvable,wei2022more,jain2024scaling,michaud2023quantization,nam2024exactly,atanasov2026scaling,bahri2024explaining,dohmatob2024tale,bordelon2024dynamical,lin2024scaling,paquette2024phases,bordelon2025feature,yan2026larger,lin2025improved,sous2026asymmetric,wang2026power,li2026functional,zhang2025critical,wang2026fast,li2026optimal, ding2025scalinglawstochasticgradient}. However, existing theory has focused primarily on first-order SGD dynamics, limiting our understanding of scaling behavior in modern optimization algorithms, where momentum is a central component. We derive sharp excess-risk and data-optimal scaling laws for both Polyak and Nesterov momentum. Our results show that Polyak momentum enlarges the critical batch size, whereas Nesterov momentum can further improve the optimal data scaling exponent. These findings clarify how the design of momentum affects parallelism and data efficiency, providing insight into modern optimizers such as Adam and Muon.
+
+
+
+\section{Preliminaries}
+
+{\bf Notation.} In this paper, we use $\eqsim$ to denote equivalence up to a constant factor, and $\lesssim$ (resp.~$\gtrsim$) indicates inequality up to a constant factor. For two non-negative functions $f,g$, we write $f(x)\lesssim g(x)$ (resp. $f(x)\gtrsim g(x)$) if there exists a constant $C>0$ such that $f(x)\leq C g(x)$ (resp. $g(x)\leq C f(x)$) for all $x$ under consideration. We write $f(x)\eqsim g(x)$ if both $f(x)\lesssim g(x)$ and $f(x)\gtrsim g(x)$ hold. 
+Throughout the paper, \(\langle\cdot,\cdot\rangle\) and
+\(\lVert\cdot\lVert_2\) denote the standard inner product and the associated (2)-norm, respectively.
+
+
+\subsection{Power-Law Kernel Regression}
+\label{sec:plkr}
+Consider a standard teacher-student kernel regression model on a Hilbert space \(\mathcal H\) with the input \(\bx\sim\cD\), and the observed label is \(y=\langle\bphi(\bx), \btheta^*\rangle + \epsilon\), where \(\epsilon \sim \cN(0,\sigma^2)\) is independent of \(\bx\). Here we assume the feature function $\bphi(\bx)$ to be Gaussian: $\bphi(\bx) \sim \cN(0,\bH)$, where $\bH = \EE_{\bx\sim \cD}[\bphi(\bx) \otimes\bphi(\bx)]$.
+The target is learned using the linear student model $f(\bx;\btheta) = \langle\bphi(\bx), \btheta\rangle$ by minimizing the population risk:
+$\cR(\btheta) = \frac{1}{2} \EE_{\bx,y}\left[(f(\bx;\btheta)-y)^2\right].$
+A direct calculation gives $\cR(\btheta) = \cE(\btheta) + \frac{\sigma^2}{2}$, where $\cE(\btheta) = \frac{1}{2}\langle\btheta-\btheta^*,\bH (\btheta-\btheta^*)\rangle$ is the population excess risk.
+
+\begin{assumption}[Diagonal covariance]
+\label{ass:diagonal-covariance}
+We assume that the feature covariance is diagonal:
+\begin{equation}
+\label{eqn:diagonal-hessian}
+\bH=
+\diag(\lambda_1,\lambda_2,\ldots),
+\qquad
+\lambda_1\geq\lambda_2\geq\cdots>0.
+\end{equation}
+This diagonal assumption is made without loss of generality, because standard SGD, Polyak momentum, and Nesterov momentum are equivariant under orthogonal transformations, see Appendix \ref{app:subsec:rotation invariant} for illustration.
+\end{assumption}
+\begin{assumption}[Power-law structures] \label{ass:power-law}
+    There exist some $\beta>1$ and $s>0$ such that 
+    \[
+        \lambda_j \eqsim j^{-\beta},\quad \lambda_j |\theta^*_j|^2\eqsim j^{-(1+s\beta)}.
+    \]
+\end{assumption}
+Here \(\beta\) is the \textbf{capacity exponent}, which controls the decay rate of the feature spectrum, and \(s\) is the \textbf{source exponent}, which describes how the target energy is distributed across spectral directions. 
+We also refer to \(s\) as the \textbf{relative difficulty} of the task: smaller \(s\) means that more target energy lies in low-curvature, small-eigenvalue directions, making the problem harder to learn.
+
+\subsection{Optimization Algorithms and Error Recursion}
+\label{sec:err recursion}
+For each step \(k\), we sample a fresh mini-batch $\cB_k \coloneqq \{(\bx_{k,i}, y_{k,i})\}_{i=1}^{B}$, and define the corresponding stochastic gradient as $\widehat{\bg}_k(\btheta) = \nabla_{\btheta}(\tfrac{1}{2B}\sum_{(\bx,y)\in\cB_k}(f(\bx;\btheta)-y)^2)$. We will consider the following one-pass algorithms:
+\begin{align}
+\textnormal{SGD:}&\qquad
+\btheta_{k+1}
+=
+\btheta_k-\eta\widehat{\bg}_k(\btheta_k),
+\label{eq:sgd-update}
+\\
+\textnormal{Polyak momentum:}&\qquad
+\btheta_{k+1}
+=
+\btheta_k-\eta\widehat{\bg}_k(\btheta_k)
++\rho(\btheta_k-\btheta_{k-1}),
+\label{eq:hb-update}
+\\
+\textnormal{Nesterov momentum:}&\qquad
+\widetilde{\btheta}_k
+=
+\btheta_k+\rho(\btheta_k-\btheta_{k-1}),\qquad
+\btheta_{k+1}
+=
+\widetilde{\btheta}_k
+-\eta\widehat{\bg}_k(\widetilde{\btheta}_k).
+\label{eq:nag-update}
+\end{align}
+Here we use \(\rho\in[0,1)\) to represent the momentum parameter, and we set \(\btheta_0=\bm0\).
+
+To derive a more explicit formula, we decompose the stochastic gradient as \(
+\widehat{\bg}_k(\btheta)
+=
+\nabla\cR(\btheta)+\bxi_k(\btheta),
+\)
+where \(\nabla\cR(\btheta)=\bH(\btheta-\btheta^*)\) is the population gradient, and \(\bxi_k(\btheta)\) contains both the additive label noise and the multiplicative noise.
+Conditional on \(\btheta\), the noise satisfies
+\[
+\EE[\bxi_k(\btheta)\mid\btheta]=\bm 0,
+\qquad
+\EE\!\left[
+\bxi_k(\btheta)\otimes\bxi_k(\btheta)
+\,\middle|\,\btheta
+\right]
+=
+\frac{1}{B}\bSigma(\btheta),
+\]
+where \(\bSigma(\btheta)\) denotes the gradient-noise covariance of batch size \(1\). The following proposition records the Hessian-aligned covariance structure that will be used in the subsequent scaling-law analysis.
+\begin{proposition}[Curvature-aligned gradient-noise covariance]
+\label{prop:noise-geometry}
+Under the Gaussian feature assumption, the stochastic-gradient noise
+in power-law kernel regression is curvature-aligned  \citep{wang2023theoretical}. More precisely, for any $\bnu$ in the unit sphere
+\(
+\mathbb S(\mathcal H)
+:=
+\{\bnu\in\mathcal H:\|\bnu\|=1\},
+\)
+we have
+\begin{equation}
+\label{eqn:noise-geometry}
+\EE\left[
+    \left|
+    \left\langle \bxi_k,\bnu\right\rangle
+    \right|^2
+\right]
+\eqsim
+\frac{1}{B}
+\left[\cE(\btheta_k)+\sigma^2\right]
+\left\langle\bnu,\bH\bnu\right\rangle.
+\end{equation}
+\end{proposition}
+
+The proof is deferred to Appendix~\ref{app:hessian alignment}.
+
+Let
+\(
+\be_k:=\btheta_k-\btheta^*,
+\widetilde{\be}_k
+:=
+(1+\rho)\be_k-\rho\be_{k-1}.
+\)
+The error recursions can then be written as
+\begin{align}
+\textnormal{SGD:}&\qquad
+\be_{k+1}
+=
+(\bI-\eta\bH)\be_k
+-\eta\bxi_k(\btheta_k),
+\label{eq:sgd-error-update}
+\\
+\textnormal{Polyak momentum:}&\qquad
+\be_{k+1}
+=
+\bigl((1+\rho)\bI-\eta\bH\bigr)\be_k
+-\rho\be_{k-1}
+-\eta\bxi_k(\btheta_k),
+\label{eq:hb-error-update}
+\\
+\textnormal{Nesterov momentum:}&\qquad
+\be_{k+1}
+=
+(\bI-\eta\bH)\widetilde{\be}_k
+-\eta\bxi_k(\widetilde{\btheta}_k).
+\label{eq:nag-error-update}
+\end{align}
+
+\subsection{One-Dimensional Polyak Momentum Dynamics}
+Consider Polyak momentum on a one-dimensional quadratic function with curvature $\lambda$. Ignoring the stochastic forcing, we get the error recursion from \eqref{eq:hb-error-update}:
+\[ (e_{k+1}-2e_k+e_{k-1})+(1-\rho)(e_k-e_{k-1})+\eta\lambda e_k=0. \]
+This is the discrete analogue of a damped mass-spring system with unit mass: the first term represents inertia, \(e_k-e_{k-1}\) is the discrete velocity, \(1-\rho\) is the friction coefficient, and \(\eta\lambda e_k\) is the restoring force. 
+The corresponding characteristic polynomial is \[ r^2-(1+\rho-\eta\lambda)r+\rho=0, \] 
+The transition between real and complex roots therefore occurs at \( \eta\lambda=(1-\sqrt{\rho})^2\eqsim(1-\rho)^2. \) This threshold separates the regimes in which \textbf{friction dominates the restoring force} (overdamped regime) and in which \textbf{inertia produces oscillations} (underdamped regime).
+\begin{itemize}
+    \item When \( \eta\lambda\lesssim(1-\rho)^2, \) the friction \(1-\rho\) is sufficiently strong relative to the restoring-force scale \(\sqrt{\eta\lambda}\), so the error returns to equilibrium without oscillation. More precisely, when \(\eta\lambda\ll(1-\rho)^2\), the dominant root satisfies \( r_+ = 1-\frac{\eta\lambda}{1-\rho} + o\left(\frac{\eta\lambda}{1-\rho}\right), \) and hence \[ e_k\eqsim e_0\exp\left(-\frac{\eta\lambda}{1-\rho}k\right). \] 
+    We can see that an overdamped direction behaves
+    like gradient descent with effective learning rate \(\eta_{\mathrm{eff}}=\frac{\eta}{1-\rho}.\)
+    \item When \(\eta\lambda\gtrsim(1-\rho)^2,\)
+    the two characteristic roots form a complex-conjugate pair. In this regime, friction is too weak to suppress the inertial motion, so the iterate repeatedly overshoots the optimum. Since \(r_+r_-=\rho\), both roots have modulus \(\sqrt{\rho}\), and the error can be written as\[e_k=\rho^{k/2}\left[c_1\cos(k\omega)+c_2\sin(k\omega)\right],\]  where \(c_1\), \(c_2\), and the frequency \(\omega\) are determined by the curvature and the initialization. Thus, the error oscillates around the optimum, while friction gradually dissipates its amplitude at the envelope rate \(\rho^{k/2}\).
+\end{itemize}
+
+% \paragraph{One dimensional intuition}
+% Consider Polyak momentum on a one-dimensional quadratic function with curvature $\lambda$. Ignoring the stochastic forcing, the error satisfies:
+% \[ e_{k+1} = (1+\rho-\eta\lambda)e_k - \rho e_{k-1}. \]
+% Under the continuous-time scaling \(t=k\sqrt{\eta}\), we have
+% \(
+% e_{k+1}-2e_k+e_{k-1}\approx\eta\ddot e(t),
+% e_k-e_{k-1}\approx\sqrt{\eta}\dot e(t),
+% \)
+% and hence
+% \[
+% \ddot e(t)
+% +\frac{1-\rho}{\sqrt{\eta}}\dot e(t)
+% +\lambda e(t)
+% =0.
+% \]
+% This is a damped spring system, where \(\lambda\) is the spring stiffness and
+% \((1-\rho)/\sqrt{\eta}\) is the effective friction coefficient. For a flat mode with \(\eta\lambda\lesssim(1-\rho)^2, \) which means that the friction is sufficiently large, the mode is overdamped, it behaves like a first order system and decays as
+% \(\exp\left(-\frac{\eta\lambda}{1-\rho}k\right).\) For a sufficiently sharp mode with \( \eta\lambda\gtrsim(1-\rho)^2, \) the mode is underdamped, it oscillates while its amplitude decays as \(\rho^{k/2}.\)
+
+\section{Stability Conditions}
+\label{sec:stability}
+In this section, we characterize the parameter regimes in which the stochastic dynamics are stable. Throughout this section, we set \(\sigma=0\) and only consider the multiplicative noise, because the additive noise is independent of the current parameter and enters the recursion only as an external forcing term. So it will only induce fluctuation and will not influence the stability boundary, see Appendix \ref{app:subsec:label noise stability} for a simple illustration. By contrast, the multiplicative noise depends on the current iterate, so its effect may therefore accumulate over time and eventually cause the second moment of the parameter error to diverge, even when the deterministic recursion is stable.
+
+Let
+\(\bC_k:=\EE[\be_k\otimes\be_k]\)
+denote the parameter covariance operator. We use the following notion of stability.
+
+\begin{definition}[Mean-square stability]
+\label{def:stability}
+Suppose that $\sigma=0$. An optimization algorithm is said to be
+\emph{mean-square asymptotically stable} if, for every admissible deterministic initialization,
+\begin{equation}
+\label{eq}
+\lim_{k\to\infty}
+\EE\left[\lVert\be_k\lVert^{2}\right]
+=
+\lim_{k\to\infty}\Tr(\bC_k)
+=
+0.
+\end{equation}
+\end{definition}
+\begin{remark}
+We would like to mention that, for Polyak and Nesterov momentum, the dynamics are second order, and hence stability is studied through the augmented two-state error \( \bz_k = \begin{pmatrix} \be_k\\ \be_{k-1} \end{pmatrix} \in\mathcal H\oplus\mathcal H. \) In this case, the covariance operator is defined by \( \bC_t = \EE[\bz_t\otimes\bz_t], \) and the stability condition in Definition~\ref{def:stability} is understood as \( \lim_{k\to\infty} \EE\|\bz_k\|_{\mathcal H\oplus\mathcal H}^{2} = \lim_{k\to\infty}\Tr(\bC_k) = 0. \) 
+\end{remark}
+The mean-square stability conditions for SGD, Polyak momentum, Nesterov momentum are derived rigorously in Appendix~\ref{app:stability}. The main technique is to reduce mean-square stability to a spectral-radius condition for the corresponding covariance operator. Here, we only present their their asymptotic scaling.
+
+\begin{theorem}[Mean-square stability of SGD and momentum methods]
+\label{thm:stability}
+Consider the power-law kernel regression model in
+Section~\ref{sec:plkr}, with capacity exponent $\beta>1$, and suppose that $\sigma=0$. When \( B\gg 1, 1-\rho\ll 1, \) the critical learning rates for mean-square asymptotic stability satisfy 
+\begin{align} 
+\eta_{\mathrm{stab}}^{\mathrm{SGD}} \quad \eqsim 1,  
+\end{align}
+\vspace{-2.5em}
+\begin{align} 
+\eta_{\mathrm{stab}}^{\mathrm{Pol}} \eqsim \min\{1,\,B(1-\rho)\}, 
+\end{align}
+\vspace{-2.5em}
+\begin{align} 
+\eta_{\mathrm{stab}}^{\mathrm{Nes}} \eqsim \min\{1,\,B^\beta(1-\rho)\}. 
+\end{align}
+More precisely, for each algorithm, there exist constants \(c>0\), independent of $B$ and $\rho$, such that the stochastic dynamics are mean-square stable whenever \(\eta<c\eta_{stab}\).
+\end{theorem}
+% \paragraph{Memory timescale further constraints stability of Polyak momentum.}
+% Compared with SGD, Polyak momentum has an additional constraint \(\eta\lesssim B(1-\rho).\) That is because Polyak momentum introduces a memory timescale \(\tau\eqsim\frac{1}{1-\rho}.\)
+% As $\rho\to1$, each stochastic perturbation is propagated over more iterations, leading to stronger noise accumulation and a more restrictive stability condition. Increasing the batch size reduces the gradient-noise variance by a factor of $1/B$, which offsets this amplification.
+
+\paragraph{Stability limits deterministic momentum schedules under stochastic gradients.}
+Classical Nesterov acceleration uses momentum schedule satisfying \(1-\rho_k\eqsim k^{-1}\), which yields acceleration in the deterministic setting \citep{nesterov1983method}. Under stochastic gradients, however, the admissible learning rate decreases as the momentum becomes larger. Indeed, the stability scalings in Theorem~\ref{thm:stability} suggest the iteration-dependent thresholds
+\[
+\eta_{\mathrm{stab},k}^{\mathrm{Pol}}
+\eqsim
+\min\left\{1,\frac{B}{k}\right\},
+\qquad
+\eta_{\mathrm{stab},k}^{\mathrm{Nes}}
+\eqsim
+\min\left\{1,\frac{B^\beta}{k}\right\}.
+\]
+Consequently, for a fixed learning rate and batch size, the dynamics may be stable at the beginning of training but become unstable at later iterations \citep{yarotsky2025corner}. This shows that deterministic results cannot be transferred directly to stochastic optimization, we need to carefully consider the stability conditions.
+
+\section{Scaling Law for Momentum Methods}
+\label{sec:scaling law}
+
+\begin{theorem}[Polyak momentum scaling law, noisy case]
+\label{thm:hbm scaling law}
+Assume that the Polyak dynamics are mean-square stable, $\eta\lesssim\min\{1,B(1-\rho)\}$, and assume that \(\sigma>0\). Then, for $k\gtrsim\max\{\frac{1-\rho}{\eta},\frac{1}{1-\rho}\}$, we have:
+\begin{itemize}
+\item (Fully overdamped regime) When \(\eta\lesssim(1-\rho)^2\),
+\begin{equation}
+\label{eq:hb-loss-overdamped}
+\EE[\cE(\btheta_k)]
+\eqsim
+\underbrace{
+\left(\frac{1-\rho}{\eta k}\right)^s
+}_{\text{signal}}
++
+\underbrace{
+\frac{\eta\sigma^2}{B(1-\rho)}
+}_{\text{additive noise}}.
+\end{equation}
+\vspace{-1em}
+\item (Mixed regime) When \(\eta\gtrsim(1-\rho)^2\),
+\begin{equation}
+\label{eq:hb-loss-mixed}
+\EE[\cE(\btheta_k)]
+\eqsim
+\underbrace{\rho^k+\left(\frac{1-\rho}{\eta k}\right)^s}_{\text{signal}}
++
+\underbrace{\frac{\eta\sigma^2}{B(1-\rho)}}_{\text{additive noise}}
++
+\underbrace{\frac{\eta k}{B}\rho^k}_{\text{multiplicative noise}}.
+\vspace{-0.5em}
+\end{equation}
+\end{itemize}
+\end{theorem}
+The proof of Theorem~\ref{thm:hbm scaling law} is deferred to Appendix~\ref{app:hbm scaling law}.
+
+\begin{theorem}[Nesterov momentum scaling law, noisy case]
+\label{thm:nesterov scaling law}
+Assume that the Nesterov dynamics are mean-square stable, $\eta\lesssim\min\{1,B^\beta(1-\rho)\}$, and assume that \(\sigma>0\). Then, for $k\gtrsim\max\{\frac{1-\rho}{\eta},\frac{1}{1-\rho}\}$, we have:
+\begin{itemize}
+\item (Fully overdamped regime) When \(\eta\lesssim(1-\rho)^2\),
+\begin{equation}
+\label{eq:nag-loss-overdamped}
+\EE[\cE(\btheta_k)]
+\eqsim
+\underbrace{
+\left(\frac{1-\rho}{\eta k}\right)^s
+}_{\text{signal}}
++
+\underbrace{
+\frac{\eta\sigma^2}{B(1-\rho)}
+}_{\text{additive noise}}.
+\end{equation}
+\vspace{-1em}
+\item (Mixed regime) When \(\eta\gtrsim(1-\rho)^2\),
+\begin{equation}
+\label{eq:nag-loss-mixed}
+\begin{aligned}
+\EE[\cE(\btheta_k)]
+\eqsim
+\underbrace{\left(\frac{(1-\rho)^2}{\eta}\right)^{s+\frac{1}{\beta}}\gamma_{\mathrm{Nes}}^k+
+\left(\frac{1-\rho}{\eta k}\right)^s
+}_{\text{signal}}
++
+\underbrace{
+\frac{\sigma^2}{B}\min\left\{\frac{\eta}{1-\rho},\left(\frac{\eta}{1-\rho}\right)^{1/\beta}\right\}
+}_{\text{additive noise}}\\
++
+\underbrace{\frac{k(1-\rho)^2}{B} \left(\frac{(1-\rho)^2}{\eta}\right)^{s+\frac{1}{\beta}}\gamma_{\mathrm{Nes}}^k }_{\text{multiplicative noise}}
+.
+\vspace{-0.5em}
+\end{aligned}
+\end{equation}
+where $\gamma_{\mathrm{Nes}}:=\rho\left(1-\frac{(1-\rho)^2}{(1+\rho)^2}\right)$ denotes the damping factor.
+\end{itemize}
+\end{theorem}
+The proof of Theorem~\ref{thm:nesterov scaling law} is deferred to Appendix~\ref{app:nesterov scaling law}.
+
+\paragraph{Signal--noise decomposition.}
+Theorems \ref{thm:hbm scaling law} and \ref{thm:nesterov scaling law} show that the loss dynamics of momentum methods also admit a natural \textbf{signal-learning} and \textbf{noise-forgetting} interpretation:
+\begin{equation}
+\label{eq:momentum-signal-noise-convolution}
+\EE[\cE(\btheta_k)]
+\eqsim
+\underbrace{\mathcal D(k)}_{\text{signal learning}}
++
+\underbrace{
+\frac{\eta^2}{B}
+\sum_{m=0}^{k-1}
+\mathcal K(k-1-m)
+(\EE[\cE_m]
++\sigma^2)}_{\text{noise accumulation}},
+\end{equation}
+where
+\[
+\mathcal D(k)
+:=
+\frac12\sum_{j\geq1}\lambda_j
+\bigl(e_{k}^{\mathrm{det}}(j)\bigr)^2,
+\qquad
+\mathcal K(\tau)
+:=
+\sum_{j\geq1}\lambda_j^2G_{\tau}(j)^2.
+\]
+Here $\mathcal D(k)$ denotes the deterministic excess risk, and $\mathcal K(\tau)$ is the forgetting kernel, with $G_{\tau}(j)$ denoting the coordinate-wise Green function. The signal term $\mathcal D(k)$ characterizes how the deterministic dynamics learn the target signal across the eigendirections. The kernel $\mathcal K(\tau)$ measures how much of a noise perturbation injected $\tau$ iterations earlier is retained by the current iterate, so the noise contribution takes the form of a convolution between the historical noise and the forgetting kernel. The regime-dependent scalings of $\mathcal D$ and $\mathcal K$ are established in Appendix~\ref{app:hbm scaling law} and \ref{app:nesterov scaling law}.
+
+\paragraph{Fully overdamped regime.}
+When \(\eta\lesssim(1-\rho)^2\), all eigendirections are overdamped. In this regime, both Polyak and Nesterov momentum behave like SGD with effective learning rate \(\eta_{\mathrm{eff}}=\frac{\eta}{1-\rho}\). Their loss therefore has the same signal-learning and noise-accumulation structure as SGD after replacing \(\frac{\eta}{1-\rho}\) by \(\eta_{\mathrm{eff}}\). 
+% Compared with SGD using the same raw learning rate, momentum learns the signal faster but increases label noise by the same factor. 
+
+\paragraph{Mixed overdamped--underdamped regime.}
+When \(\eta\gtrsim(1-\rho)^2\), the spectrum separates into sharp underdamped directions and flat overdamped directions. Correspondingly, the deterministic signal term separates into an exponentially decaying transient and a polynomially decaying tail. 
+
+\paragraph{Spectral adaptivity accelerates noise forgetting for Nesterov momentum.}
+Nesterov's look-ahead correction makes the memory of an underdamped direction depend on its curvature: historical noise decays as \(\rho^m\) under Polyak, but as \([\rho(1-\eta\lambda_j)]^m\) under Nesterov. Thus all underdamped Polyak directions forget noise on the same momentum timescale \((1-\rho)^{-1}\), whereas the Nesterov forgetting time is \((1-\rho+\eta\lambda_j)^{-1}\) and becomes shorter as \(\lambda_j\) increases. This difference clips the accumulated additive label noise in each direction:
+\[
+\textnormal{Polyak:}\quad
+\cN_j^{\rm Pol}\eqsim\frac{\sigma^2}{B}\frac{\eta\lambda_j}{1-\rho},
+\qquad
+\textnormal{Nesterov:}\quad
+\cN_j^{\rm Nes}\eqsim\frac{\sigma^2}{B}\frac{\eta\lambda_j}{1-\rho+\eta\lambda_j}.
+\]
+In flat directions with \(\eta\lambda_j\ll1-\rho\), the two contributions are comparable. In sharp directions with \(\eta\lambda_j\gtrsim1-\rho\), however, the Nesterov contribution saturates at order one, while the Polyak contribution continues to grow with curvature. Consequently, summing over the power-law spectrum gives
+\[
+\cN_{\rm label}^{\rm Pol}
+\eqsim
+\frac{\sigma^2}{B}\frac{\eta}{1-\rho},
+\qquad
+\cN_{\rm label}^{\rm Nes}
+\eqsim
+\frac{\sigma^2}{B}
+\min\left\{
+\frac{\eta}{1-\rho},
+\left(\frac{\eta}{1-\rho}\right)^{1/\beta}
+\right\}.
+\]
+
+
+% \paragraph{Can momentum accelerate?}
+% We now ask whether momentum genuinely accelerates learning. We first consider the deterministic full-gradient setting, where the natural complexity measure is the number of iterations $K$. 
+% For gradient descent, the excess risk in power-law kernel regression
+% satisfies
+% \[
+%     \cE_K^{\rm GD}\eqsim(\eta K)^{-s}.
+% \]
+% By contrast, the deterministic Polyak risk is
+% \[
+%     \cE_K^{\rm HB}
+%     \eqsim
+%     \rho^K
+%     +
+%     \left(\frac{1-\rho}{\eta K}\right)^s.
+% \]
+% Choosing \(1-\rho\eqsim\frac{\log K}{K}\)
+% balances the two terms and yields
+% \[
+%     \cE_K^{\rm HB}
+%     \eqsim
+%     \eta^{-s}K^{-2s}(\log K)^s.
+% \]
+% Thus, up to a logarithmic factor, momentum accelerates the deterministic
+% rate from $K^{-s}$ to $K^{-2s}$. This is consistent in spirit with the classical deterministic acceleration results for momentum methods \citep{polyak1964some,nesterov1983method}. However, the deterministic choice \(1-\rho\eqsim\frac{\log K}{K}\) requires increasingly long momentum memory as $K$ grows. In the stochastic setting, the same long memory also accumulates gradient noise.
+% For example, when $\sigma\eqsim1$, the label-noise contribution to the Polyak loss is \(\cE_K^{\rm HB,lbn}\eqsim\frac{\eta K}{B\log K}.\) For fixed $B$, this term grows with $K$, so the deterministic momentum
+% tuning no longer yields a vanishing stochastic loss. Since increasing
+% $B$ suppresses the noise at the cost of using more samples per iteration,
+% we next study acceleration under a fixed data budget $D=BK$.
+
+\section{Data and Batch Size Scaling}
+In this section, we consider the data-limited setting, where the total data size \(D=BK\) is fixed. For each algorithm, we ask the question: \textit{what is the optimal final-step loss that an algorithm can achieve by optimally scaling its hyperparameters with the data budget \(D\), subject to the corresponding stability constraints?}
+
+We parameterize the batch size, number of iterations, learning rate, and
+momentum parameter as
+\begin{equation}
+\label{eq:data-scaling-parameterization}
+    B\eqsim D^a,
+    \qquad
+    K\eqsim D^{1-a},
+    \qquad
+    1-\rho\eqsim D^{-b},
+    \qquad
+    \eta\eqsim D^{-c},
+\end{equation}
+where \(0\leq a\leq1,b\geq0,c\geq0.\)
+
+Throughout this section, we restrict our analysis to constant learning rates. Although this restriction may not achieve the optimal scaling attainable by each algorithm over all possible learning-rate schedules, it provides a controlled comparison and offers practical guidance for tuning the stable phase of schedules such as WSD. We leave the extension to general learning rate schedules for future work.
+
+\subsection{Noisy Case \texorpdfstring{\(\sigma > 0\)}{sigma = 0}}
+\label{subsec:noisy}
+
+\begin{proposition}[Data-optimal scaling for SGD \citep{li2026functional}]
+\label{prop:sgd data scaling}
+Given a data budget \(D=BK\), consider the final loss of SGD in
+\eqref{eq:intro-sgd-scaling-law} under the stability condition \(\eta\lesssim 1\), and assume \(\sigma>0\). For every batch size satisfying \(1\lesssim B\lesssim D^{\frac{s}{s+1}},\) the data-optimal learning rate obeys the \textbf{linear scaling rule} \(\eta_{\rm opt}\eqsim B D^{-\frac{s}{s+1}}.\) All such choices achieve the same \textbf{optimal data scaling rate} \(\cE_{\rm opt}^{\rm SGD}(D)\eqsim D^{-\frac{s}{s+1}}.\)
+Moreover, the \textbf{largest batch size} that preserves this optimal rate is \(B_{\max}^{\rm SGD}(D)\eqsim D^{\frac{s}{s+1}}\).
+\end{proposition}
+
+The Proof of Proposition \ref{prop:sgd data scaling} is deferred to Appendix \ref{app:sgd_scaling_analysis}.
+
+\begin{theorem}[Data-optimal scaling for Polyak momentum]
+\label{thm:polyak data scaling}
+Given a data budget \(D=BK\), consider the final loss of Polyak momentum in Theorem~\ref{thm:hbm scaling law} under the stability condition \(\eta\lesssim\min\{1,B(1-\rho)\}\), and assume \(\sigma>0\).
+Then the data-optimal effective learning rate obeys the \textbf{linear scaling rule} \(\frac{\eta_{\rm opt}}{1-\rho}\eqsim B D^{-\frac{s}{s+1}}.\) All valid choices satisfying this linear scaling achieve the same \textbf{optimal data scaling rate} \(\cE_{\rm opt}^{\rm Pol}(D)\eqsim D^{-\frac{s}{s+1}}.\) Moreover, the \textbf{largest batch size} preserving this optimal rate is, \(B_{\max}^{\rm Pol}(D)=D^{\frac{2s+1}{2s+2}-o(1)}.\)
+\end{theorem}
+
+The proof of Theorem~\ref{thm:polyak data scaling} is deferred to
+Appendix~\ref{app:hb_scaling_analysis}.
+
+\paragraph{Polyak momentum enlarges the critical batch size.}
+Polyak momentum achieves the same optimal data scaling rate as SGD, but permits a larger critical batch size, defined here as the largest batch size for which the optimal rate remains attainable by admissibly tuning the remaining hyperparameters. For SGD, combining the linear scaling rule \(\eta_{\rm opt}\eqsim B D^{-\frac {s}{s+1}}\) with the stability condition \(\eta\lesssim1\) yields the critical batch size
+\(B_{\max}^{\rm SGD}(D)\eqsim D^{\frac{s}{s+1}}\). By contrast, Polyak momentum can compensate for a larger batch size by decreasing \(1-\rho\), thereby increasing the effective learning rate \(\frac{\eta}{1-\rho}\) while keeping \(\eta\) within the stability region \(\eta\lesssim\min\{1,B(1-\rho)\}\). Consequently, it preserves the optimal rate \(D^{-\frac{s}{s+1}}\) up to a larger critical batch size \(B_{\max}^{\rm Pol}(D)=D^{\frac{2s+1}{2s+2}-o(1)}.\) In practice, this means that under sufficient parallelism, Polyak momentum achieves the same rate as SGD with fewer sequential optimization steps.
+
+\begin{theorem}[Data-optimal scaling for Nesterov momentum]
+\label{thm:nesterov data scaling}
+Given a data budget \(D=BK\), consider the final loss of Nesterov momentum in
+Theorem~\ref{thm:nesterov scaling law} under the stability condition
+\(\eta\lesssim\min\{1,B^\beta(1-\rho)\}\), and assume \(\sigma>0\).
+For every sufficiently small \(\varepsilon>0\), choose
+\[
+B\eqsim
+D^{\frac{2s\beta+1}{2s\beta+\beta+1}-o(1)},
+\qquad
+1-\rho\eqsim
+D^{-\frac{\beta}{2s\beta+\beta+1}+o(1)},
+\qquad
+\eta\eqsim1.
+\]
+The optimal data scaling rate satisfies
+\[
+\cE_{\rm opt}^{\rm Nes}(D)
+\eqsim
+D^{-\frac{2s\beta}{2s\beta+\beta+1}
++o(1)}.
+\]
+% Consequently, the \textbf{supremal optimal data scaling rate} and the
+% corresponding batch size are
+% \[
+% \cE_{\rm opt}^{\rm Nes}(D)
+% =
+% D^{-\frac{2s\beta}{2s\beta+\beta+1}+o(1)},
+% \qquad
+% B_{\max}^{\rm Nes}(D)
+% =
+% D^{\frac{2s\beta+1}{2s\beta+\beta+1}-o(1)}.
+% \]
+\end{theorem}
+
+The proof of Theorem~\ref{thm:nesterov data scaling} is deferred to
+Appendix~\ref{app:nag_scaling_analysis}. From Theorem \ref{thm:nesterov data scaling}, we can see that Nesterov momentum has a larger data-optimal scaling rate than SGD and Polyak momentum, we will discuss this in the following theorem.
+
+\begin{theorem}[Batch size phase diagram for data-optimal scaling]
+\label{thm:fixed-batch-data-scaling}
+Given a data budget \(D\), let \(B\eqsim D^a\), where \(a\in[0,1)\) is the batch size exponent. We optimally tune the remaining hyperparameters subject to the corresponding stability conditions. Define optimal data scaling rate \(r_A(a)\) by
+\[
+\inf_{\rho,\eta}
+\EE[\cE(\btheta_K)]
+=
+D^{-r_A(a)+o(1)},
+\qquad
+A\in\{\mathrm{SGD},\mathrm{Pol},\mathrm{Nes}\}.
+\]
+Then the optimal decay exponents are
+\[
+r_{\mathrm{SGD}}(a)
+=
+\begin{cases}
+\dfrac{s}{s+1},
+& 0\leq a\leq \dfrac{s}{s+1},\\[1mm]
+s(1-a),
+& \dfrac{s}{s+1}<a<1,
+\end{cases}
+\]
+\[
+r_{\mathrm{Pol}}(a)
+=
+\begin{cases}
+\dfrac{s}{s+1},
+& 0\leq a\leq \dfrac{2s+1}{2s+2},\\[1mm]
+2s(1-a),
+& \dfrac{2s+1}{2s+2}<a<1,
+\end{cases}
+\]
+and
+\[
+r_{\mathrm{Nes}}(a)
+=
+\begin{cases}
+\dfrac{s}{s+1},
+& 0\leq a\leq \dfrac{s}{s+1},\\[1mm]
+\dfrac{s\bigl(1+(\beta-1)a\bigr)}{s\beta+1},
+& \dfrac{s}{s+1}<a\leq
+\dfrac{2s\beta+1}{2s\beta+\beta+1},\\[2mm]
+2s(1-a),
+& \dfrac{2s\beta+1}{2s\beta+\beta+1}<a<1.
+\end{cases}
+\]
+\end{theorem}
+
+Theorem~\ref{thm:fixed-batch-data-scaling} turns the globally optimized rates above into the batch size phase diagram summarized in the right panel of Figure~\ref{fig:stability-and-scaling}. The proof of Theorem~\ref{thm:fixed-batch-data-scaling} is deferred to Appendix~\ref{app:fix_bsz}.
+
+\begin{figure}[t]
+      \centering
+      \begin{subfigure}[t]{0.48\textwidth}
+          \centering
+          \includegraphics[width=\linewidth]{figures/noisy_rate_vs_s.pdf}
+          \caption{Noisy setting, $\sigma>0$.}
+          \label{fig:noisy rate vs s}
+      \end{subfigure}
+      \hfill
+      \begin{subfigure}[t]{0.48\textwidth}
+          \centering
+          \includegraphics[width=\linewidth]{figures/noiseless_rate_vs_s.pdf}
+          \caption{Noiseless setting, $\sigma=0$.}
+          \label{fig:noiseless rate vs s}
+      \end{subfigure}
+      \caption{
+          Optimal data scaling rates as functions of the source exponent $s$
+          for $\beta=8$. Small $s$ corresponds to the hard regime, where
+          Nesterov momentum improves over SGD and Polyak momentum. Large $s$
+          corresponds to the easy regime, where the advantage of Nesterov
+          diminishes and the rates eventually coincide in the noiseless case.
+      }
+      \label{fig:data-scaling-summary}
+  \end{figure}
+
+
+\paragraph{Nesterov acceleration emerges in the large-batch regime.}
+The right panel of Figure~\ref{fig:stability-and-scaling} shows the optimal decay exponent \(r_A(a)\) attainable when \(B\eqsim D^a\) and the remaining hyperparameters are tuned optimally. For \(a\le \frac{s}{s+1}\), all three methods achieve the same rate \(\frac{s}{s+1}\). Beyond this threshold, the SGD rate deteriorates and Polyak momentum can only preserve the baseline rate, whereas Nesterov momentum attains the strictly larger exponent. This improvement is enabled by Nesterov's look-ahead correction, which suppresses additive noise accumulation and therefore permits a more aggressive effective learning rate at large batch sizes.
+
+\subsection{Noiseless Case \texorpdfstring{\(\sigma=0\)}{sigma = 0}}
+In this section, we will present results when additive label noise is absent. Notice that mini-batch training remains stochastic in this setting, so the dynamics are therefore governed by the interaction between signal learning and multiplicative noise. Similar to Theorems \ref{thm:hbm scaling law} and \ref{thm:nesterov scaling law}, the detailed excess-risk scaling laws for SGD, Polyak momentum, and Nesterov momentum are stated in Theorems \ref{thm:sgd scaling law noiseless}, \ref{thm:hbm scaling law noiseless} and \ref{thm:nesterov scaling law noiseless} in Appendix \ref{app:noiseless}. Here, we summarize their data-optimal results and compare with noisy case, which are illustrated in Figure~\ref{fig:data-scaling-summary}.
+
+\begin{theorem}[Data-optimal scaling in the noiseless setting]
+\label{thm:noiseless-data-optimal-scaling}
+Given a data budget \(D=BK\), suppose that \(\sigma=0\), and optimally tune the batch size, learning rate, and momentum parameter subject to the corresponding mean-square stability conditions.
+
+For SGD and Polyak momentum, the optimal final losses satisfy
+\begin{equation}
+\label{eq:noiseless-sgd-polyak-optimal-rate}
+\cE_{\rm opt}^{\rm SGD}(D)
+\eqsim
+\cE_{\rm opt}^{\rm Pol}(D)
+\eqsim
+D^{-\left(s\wedge(2-\frac{1}{\beta})\right)}.
+\end{equation}
+
+For Nesterov momentum, the optimal final loss satisfies
+\begin{equation}
+\label{eq:noiseless-nesterov-optimal-rate}
+\cE_{\rm opt}^{\rm Nes}(D)
+\eqsim
+\begin{cases}
+D^{-\frac{2s\beta}{\beta+1}},
+&
+0<s\leq \dfrac{\beta-1}{2\beta},
+\\[8pt]
+D^{-\frac{s(3\beta-1)}
+{s(\beta-1)+\beta+2-\frac{1}{\beta}}},
+&
+\dfrac{\beta-1}{2\beta}
+<s<
+2-\dfrac{1}{\beta},
+\\[12pt]
+D^{-\left(2-\frac{1}{\beta}\right)},
+&
+s\geq 2-\dfrac{1}{\beta}.
+\end{cases}
+\end{equation}
+\end{theorem}
+
+Similar to the noisy case, Polyak momentum never improves the optimal data scaling exponent over SGD. By contrast, Nesterov momentum achieves a strictly larger exponent when \(0<s<2-\frac{1}{\beta}.\)
+
+% \begin{remark}[Critical batch size in the noiseless setting]
+%   The role of momentum depends sharply on the source regime. When \(s<2-\frac{1}{\beta}\), the SGD rate deteriorates as soon as the batch size grows with \(D\); Polyak momentum preserves the SGD-optimal exponent over a range of larger batch sizes, while Nesterov momentum can further improve the optimal exponent. When \(s\geq2-\frac{1}{\beta}\), all three methods attain the same optimal exponent only at constant-order batch size, but their fixed-batch behavior remains different: beyond the crossover point, Polyak and Nesterov momentum achieve the same rate and both strictly outperform SGD. Thus, momentum methods can still benefit if one does large batch training in the easy regime. See Appendix~\ref{app:fix_bsz_noiseless} for the complete fixed-batch phase
+%   diagrams.
+% \end{remark}
+\begin{remark}[Critical batch size in the noiseless setting]
+Although Polyak momentum does not improve the optimal data scaling exponent over SGD, it supports a larger batch size scaling when \(s<2-\frac{1}{\beta}\), whereas SGD requires \(B\eqsim 1\) to attain the same optimal rate. Nesterov momentum further improves the data scaling exponent in this regime. When \(s\geq 2-\frac{1}{\beta}\), all three methods attain the same optimal exponent only at constant-order batch size, but their fixed-batch behavior remains different: beyond the crossover point, Polyak and Nesterov momentum achieve the same rate and both strictly outperform SGD. Thus, momentum methods can still benefit if one does large batch training in the easy regime. See Appendix~\ref{app:fix_bsz_noiseless} for the complete batch size phase diagram analysis.
+\end{remark}
+% \begin{remark}[Critical batch size in the noiseless setting]
+% Although Polyak momentum does not improve the optimal data scaling exponent over SGD, it supports a larger batch size scaling when \(s<2-\frac{1}{\beta}\), whereas SGD requires \(B\eqsim 1\) to attain the same optimal rate. Nesterov momentum further improves the data scaling exponent in this regime. When \(s\geq 2-\frac{1}{\beta}\), all three methods are limited by multiplicative noise and exhibit the same optimal scaling behavior. See Theorem \ref{app:} {\red xxx}
+% \end{remark}
+
+% \begin{theorem}[Data-optimal scaling for Nesterov momentum]
+% \label{thm:nesterov data scaling}
+% Given a data budget \(D=BK\), consider the final loss of Nesterov
+% momentum in Theorems~\ref{thm:nesterov scaling law} under the stability
+% condition
+% \(\eta\lesssim\min\{1,B^\beta(1-\rho)\}\).
+% Unlike SGD and Polyak momentum, The data-optimal scaling for Nesterov momentum is uniquely determined up to constant factors:
+% \begin{itemize}
+%     \item When \(0<s<1-\frac{1}{2\beta},\) choose \(B_{\rm opt}^{\rm Nes}(D)\eqsim D^{\frac{2s\beta}{s\beta+2\beta-1}}, \frac{\eta_{\rm opt}}{1-\rho}\eqsim D^{\frac{s\beta}{s\beta+2\beta-1}},\) and the resulting \textbf{optimal data scaling rate} is \(\cE_{\rm opt}^{\rm Nes}(D)\eqsim D^{-\frac{s(2\beta-1)}{s\beta+2\beta-1}}.\)
+%     \item When \(s\geq 1-\frac{1}{2\beta},\) for every arbitrarily small \(\varepsilon>0\), choose \(B\eqsim D^{\frac{2s\beta+1}{2s\beta+\beta+1}-\varepsilon}, 1-\rho \eqsim D^{-\frac{\beta}{2s\beta+\beta+1}+\varepsilon}, \eta\eqsim1.\) Then supremal \textbf{optimal data scaling rate} is \(\cE_{\rm opt}^{\rm Nes}(D)\eqsim D^{-\frac{2s\beta}{2s\beta+\beta+1}+o(1)}.\)
+% \end{itemize}
+% \end{theorem}
+
+% The proof of Theorem \ref{thm:nesterov data scaling} is deferred to Appendix \ref{app:nag_scaling_analysis}.
+
+% \begin{theorem}[Data-optimal scaling for Polyak momentum]
+% \label{thm:polyak data scaling}
+
+% Given a data budget \(D=BK\), consider the final loss of Polyak momentum in Theorem~\ref{thm:hbm scaling law} under the stability condition \(\eta\lesssim\min\{1,B(1-\rho)\}\). Then the data-optimal effective learning rate obeys the \textbf{linear scaling rule} \(\frac{\eta_{\rm opt}}{1-\rho}\eqsim B D^{-\frac{s}{s+1}}.\)
+% All valid choices satisfying this linear scaling achieve the same \textbf{optimal data scaling rate} \(\cE_{\rm opt}^{\rm Pol}(D)\eqsim D^{-\frac{s}{s+1}}.\) Moreover, the \textbf{largest batch size} that preserves this optimal rate is:
+% \[
+% B_{\max}^{\rm Pol}(D)
+% \eqsim
+% \begin{cases}
+% D^{\frac{2s}{s+1}},
+% & 0<s\leq \frac12,\\[0.5em]
+% D^{\frac{2s+1}{2s+2}},
+% & s> \frac12.
+% \end{cases}
+% \]
+% \end{theorem}
+
+% The proof of Theorem \ref{thm:polyak data scaling} is deferred to Appendix \ref{app:hb_scaling_analysis}.
+
+\section{Numerical Experiments}
+\label{sec:experiment}
+We numerically validate the theoretical predictions on the power-law kernel
+regression model introduced in Section~\ref{sec:plkr}. We first test the
+mean-square stability boundaries of Polyak and Nesterov momentum and then
+examine their implications for critical-batch-size and data-optimal scaling.
+Additional implementation details are provided in
+Appendix~\ref{app:experiment}.
+
+\paragraph{Empirical stability boundaries.}
+We first test the stability conditions derived in
+Section~\ref{sec:stability}. Fixing the momentum parameter~\(\rho\), we vary
+the batch size~\(B\) and numerically estimate the largest stable learning
+rate~\(\eta\) for SGD, Polyak momentum, and Nesterov momentum. Each marker in
+Figure~\ref{fig:stability-beta15} reports the mean estimate over five
+independent random seeds. For Polyak momentum, the empirical boundary follows
+\(\eta_{\max}\eqsim B(1-\rho)\) before reaching an order-one deterministic
+ceiling. By contrast, Nesterov momentum follows
+\(\eta_{\max}\eqsim B^\beta(1-\rho)\), and therefore reaches the deterministic
+ceiling at a substantially smaller batch size. The agreement holds for both
+spectral exponents shown in Figure~\ref{fig:stability-beta15}, supporting
+the distinct batch-size dependence predicted by our exact stability
+conditions.
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/beta1_5s2_plot.pdf}
+        \caption{\(s=2\), \(\beta=1.5\).}
+        \label{fig:stability-beta15}
+    \end{subfigure}
+    \hfill
+    % \begin{subfigure}[t]{0.49\textwidth}
+    %     \centering
+    %     \includegraphics[width=\linewidth]{figures/beta2s3_plot.pdf}
+    %     \caption{\(s=3\) and \(\beta=2\).}
+    %     \label{fig:stability-beta2}
+    % \end{subfigure}
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/mom_large_batch.pdf}
+        \caption{\(s=0.3\), \(\beta=4\).}
+        \label{fig:polyak data scaling}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/nag_acc.pdf}
+        \caption{\(s=0.3\), \(\beta=4\).}
+        \label{fig:nesterov data scaling}
+    \end{subfigure}
+    \caption{Empirical stability boundaries and data scaling behavior of SGD, Polyak momentum, and Nesterov momentum. Markers show the simulation results, and dashed lines indicate the corresponding theoretical predictions. \textbf{Left:} Empirical stability boundaries as functions of the batch size. \textbf{Middle:} For \(s=0.3\) and \(\beta=4\), SGD and Polyak momentum are compared under the batch size scalings \(B\eqsim D^{\frac{s}{s+1}}\) and \(B\eqsim D^{\frac{2s}{s+1}}\). Both methods achieve the optimal rate at the smaller batch size, whereas at the larger batch size SGD slows down while Polyak momentum preserves the rate \(D^{-\frac{s}{s+1}}\). \textbf{Right:} For \(s=0.3\) and \(\beta=4\), all three algorithms use the Nesterov-optimal batch size scaling \(B\eqsim D^{\frac{2s\beta+1}{2s\beta+\beta+1}-\epsilon}\). Under this scaling, SGD is slower than its data-optimal rate, Polyak momentum retains the rate \(D^{-\frac{s}{s+1}}\), and Nesterov momentum achieves the faster rate.}
+\end{figure}
+
+\paragraph{Polyak momentum supports a larger critical batch size.} We next verify that Polyak momentum preserves the optimal data scaling
+rate at batch sizes beyond the critical batch size of SGD. We set
+\(s=0.3, \beta=4\), and compare both algorithms at the two batch size scalings \(B\eqsim D^{\frac{s}{s+1}}\) and \(B\eqsim D^{\frac{2s}{s+1}}\), using the
+theoretically predicted optimal hyperparameter scalings. Figure \ref{fig:polyak data scaling} shows the results. At \(B\eqsim D^{\frac{s}{s+1}}\), both SGD and Polyak momentum achieve the optimal rate \(D^{-\frac{s}{s+1}}\). At \(B\eqsim D^{\frac{2s}{s+1}}\), SGD becomes noticeably slower, but Polyak momentum preserves the same slope.
+
+\paragraph{Nesterov momentum achieves a faster data scaling rate in large batch training. } Finally, we compare SGD, Polyak momentum, and Nesterov momentum under a large batch setting. We set \(s=0.3\) and \(\beta=4\), and choose the batch size of all three algorithms according to the theoretically optimal scaling for Nesterov momentum \(B\eqsim D^{\frac{2s\beta+1}{2s\beta+\beta+1}-\epsilon}\). Figure~\ref{fig:nesterov data scaling} shows the results. Under this batch size scaling, SGD no longer attains its data-optimal rate, since the batch size grows beyond critical batch size. In contrast, Polyak momentum can compensate by appropriately scaling the momentum parameter and retains the rate \(D^{-\frac{s}{s+1}}\), while Nesterov momentum exhibits the steeper slope predicted by its improved data scaling theory. These results illustrate that momentum methods can make effective use of larger batch sizes, with Nesterov momentum achieving the fastest data scaling among the three methods.
+
+
+% \begin{figure}[t]
+%     \centering
+%     \begin{subfigure}[t]{0.49\textwidth}
+%         \centering
+%         \includegraphics[width=\linewidth]{figures/mom_large_batch.pdf}
+%         \caption{\(s=0.3\) and \(\beta=4\).}
+%         \label{fig:polyak data scaling}
+%     \end{subfigure}
+%     \hfill
+%     \begin{subfigure}[t]{0.49\textwidth}
+%         \centering
+%         \includegraphics[width=\linewidth]{figures/nag_acc.pdf}
+%         \caption{\(s=0.8\) and \(\beta=4\).}
+%         \label{fig:nesterov data scaling}
+%     \end{subfigure}
+%     \caption{Empirical comparison of the data scaling behavior of SGD, Polyak momentum, and Nesterov momentum. Markers show the simulation results, and dashed lines indicate the corresponding theoretical predictions. \textbf{Left:} For \(s=0.3\) and \(\beta=4\), SGD and Polyak momentum are compared under the batch size scalings \(B\eqsim D^{s/(s+1)}\) and \(B\eqsim D^{2s/(s+1)}\). Both methods achieve the optimal rate at the smaller batch size, whereas at the larger batch size SGD slows down while Polyak momentum preserves the rate \(D^{-s/(s+1)}\). \textbf{Right:} For \(s=0.8\) and \(\beta=4\), all three algorithms use the Nesterov-optimal batch size scaling \(B\eqsim D^{2s\beta/(s\beta+2\beta-1)}\). Under this scaling, SGD is slower than its data-optimal rate, Polyak momentum retains the rate \(D^{-s/(s+1)}\), and Nesterov momentum achieves the faster rate predicted by our theory.}
+%     \label{fig:data scaling}
+% \end{figure}
+
+\section{Discussion and Conclusion}
+We developed a unified theory of stochastic stability and data scaling for Polyak and Nesterov momentum in power-law kernel regression. By characterizing mean-square stability
+and decomposing excess risk into signal learning and noise accumulation, we identified curvature-dependent damping as the key distinction between the methods. Polyak momentum
+preserves the optimal statistical rate over a substantially larger batch size range, whereas Nesterov can further improve the data scaling exponent and
+data efficiency. 
+
+Our analysis is limited to constant learning rates and classical momentum updates, and therefore does not capture several important features of modern training. In particular,
+practical learning-rate schedules, including warmup, cosine decay, and warmup–stable–decay, may alter the stability and noise-forgetting dynamics characterized here. Moreover,
+our results do not directly apply to adaptive or matrix-valued optimizers such as Adam and Muon, whose preconditioning and orthogonalization mechanisms interact nontrivially
+with momentum. Extending the present framework to these settings remains an important direction for future work.
+
+
+\section*{Acknowledgments}
+
+\bibliography{ref.bib}
+\bibliographystyle{bibstyle}
+
+
+\newpage
+
+
+\appendix
+\part{Appendix}
+\parttoc
+
+\input{appendix}
+
+\end{document}
