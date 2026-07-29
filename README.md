@@ -104,7 +104,7 @@ The stability experiment confirms the different batch-size dependence of the Pol
 
 | Stability boundary | Polyak batch scaling | Nesterov large-batch scaling |
 |---|---|---|
-| ![Stability boundary](assets/figures/beta1_5s2_plot.png) | ![Polyak scaling](assets/figures/polyak_scaling.png) | ![Nesterov scaling](assets/figures/nesterov_scaling.png) |
+| <img src="assets/figures/beta1_5s2_plot.png" alt="Stability boundary" width="300" height="240"> | <img src="assets/figures/polyak_scaling.png" alt="Polyak scaling" width="300" height="240"> | <img src="assets/figures/nesterov_scaling.png" alt="Nesterov scaling" width="300" height="240"> |
 
 <a id="getting-started"></a>
 
