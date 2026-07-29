@@ -8,20 +8,20 @@ This repository provides a streamlined implementation for reproducing the experi
 
 The feature covariance spectrum and target satisfy
 
-\[
+$$
 \lambda_j \asymp j^{-\beta}, \qquad
 \lambda_j |\theta_j^\star|^2 \asymp j^{-(1+s\beta)},
-\]
+$$
 
-where \(\beta>1\) is the capacity exponent and \(s>0\) is the source exponent. The data budget is \(D=BK\), where \(B\) is the batch size and \(K\) is the number of optimization steps.
+where $\beta>1$ is the capacity exponent and $s>0$ is the source exponent. The data budget is $D=BK$, where $B$ is the batch size and $K$ is the number of optimization steps.
 
 ### 1. Stochastic Stability Boundaries
 
 | Method | Critical learning rate |
 |---|---|
-| SGD | \(\eta_{\mathrm{stab}}\asymp 1\) |
-| Polyak | \(\eta_{\mathrm{stab}}\asymp \min\{1,B(1-\rho)\}\) |
-| Nesterov | \(\eta_{\mathrm{stab}}\asymp \min\{1,B^\beta(1-\rho)\}\) |
+| SGD | $\eta_{\mathrm{stab}}\asymp 1$ |
+| Polyak | $\eta_{\mathrm{stab}}\asymp \min\{1,B(1-\rho)\}$ |
+| Nesterov | $\eta_{\mathrm{stab}}\asymp \min\{1,B^\beta(1-\rho)\}$ |
 
 Nesterov's look-ahead correction makes its stable region grow faster with batch size, allowing it to reach the deterministic stability ceiling earlier than Polyak momentum.
 
@@ -29,12 +29,12 @@ Nesterov's look-ahead correction makes its stable region grow faster with batch 
 
 In the presence of label noise:
 
-- SGD achieves the optimal data-scaling rate \(D^{-s/(s+1)}\).
+- SGD achieves the optimal data-scaling rate $D^{-s/(s+1)}$.
 - Polyak momentum achieves the same optimal rate but preserves it over a substantially larger range of batch sizes.
 - Nesterov momentum achieves the faster rate
-  \[
+  $$
   D^{-\frac{2s\beta}{2s\beta+\beta+1}+o(1)}.
-  \]
+  $$
 
 ![Batch-size phase diagram](assets/figures/rate_diagram.png)
 
