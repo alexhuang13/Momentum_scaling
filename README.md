@@ -1,19 +1,33 @@
-# From Polyak to Nesterov: Momentum Scaling in Power-Law Kernel Regression
+# From Polyak to Nesterov: Landscape-Aware Momentum Methods May Improve Stability and Data Scaling
 
-This repository provides a streamlined implementation for reproducing the experiments in **“From Polyak to Nesterov: Landscape-Aware Momentum Methods May Improve Stability and Data Scaling.”** It studies stochastic optimization in high-dimensional power-law kernel regression and compares **SGD**, **Polyak heavy-ball momentum**, and **Nesterov momentum** in terms of stability, critical batch size, and data-scaling behavior.
+<p align="center">
+  <a href="#introduction">📖 Introduction</a> •
+  <a href="#main-results">📊 Main Results</a> •
+  <a href="#getting-started">🚀 Getting Started</a>
+</p>
 
-> The former duplicated CPU and GPU notebooks have been replaced by a single PyTorch implementation. The `--device` option only changes the compute device; the model, random process, optimizer updates, and experiment configurations all share the same code.
+<a id="introduction"></a>
 
-## Main Results
+## 📖 Introduction
 
-The feature covariance spectrum and target satisfy
+Momentum is a central ingredient in modern optimization, but its interaction with stochastic gradient noise and spectral structure is still not fully understood. Classical theory explains acceleration in deterministic settings, while offering a less complete picture of why Polyak and Nesterov momentum can behave differently in mini-batch training.
+
+In this work, we study **SGD**, **Polyak heavy-ball momentum**, and **Nesterov momentum** in power-law kernel regression with Gaussian features. This model provides a tractable multi-scale learning problem in which the spectrum, target smoothness, gradient noise, and momentum dynamics can be analyzed together. The feature covariance spectrum and target obey
 
 $$
 \lambda_j \asymp j^{-\beta}, \qquad
 \lambda_j |\theta_j^\star|^2 \asymp j^{-(1+s\beta)},
 $$
 
-where $\beta>1$ is the capacity exponent and $s>0$ is the source exponent. The data budget is $D=BK$, where $B$ is the batch size and $K$ is the number of optimization steps.
+where $\beta>1$ is the capacity exponent and $s>0$ is the source exponent. Smaller $s$ places more target energy in low-curvature directions and therefore corresponds to a harder learning problem.
+
+Our analysis connects mean-square stability with data scaling under a fixed budget $D=BK$, where $B$ is the batch size and $K$ is the number of optimization steps. It shows that Polyak momentum mainly enlarges the useful batch-size range, whereas Nesterov momentum can improve the optimal data-scaling exponent through curvature-dependent damping of stochastic noise.
+
+The repository contains the paper source and a unified PyTorch implementation of the numerical experiments. CPU, CUDA, and Apple Silicon runs share the same model and optimizer code; `--device` only selects the compute backend.
+
+<a id="main-results"></a>
+
+## 📊 Main Results
 
 ### 1. Stochastic Stability Boundaries
 
@@ -38,7 +52,7 @@ In the presence of label noise:
 
 ![Batch-size phase diagram](assets/figures/rate_diagram.png)
 
-## Key Numerical Results from the Paper
+### Key Numerical Results
 
 The left panel validates the distinct stability boundaries of Polyak and Nesterov momentum. The middle panel shows that Polyak momentum preserves the optimal scaling rate beyond SGD's critical batch size. The right panel shows that Nesterov momentum achieves a faster data-scaling rate in the large-batch regime.
 
@@ -46,7 +60,11 @@ The left panel validates the distinct stability boundaries of Polyak and Nestero
 |---|---|---|
 | ![Stability boundary](assets/figures/beta1_5s2_plot.png) | ![Polyak scaling](assets/figures/mom_large_batch.png) | ![Nesterov scaling](assets/figures/nag_acc.png) |
 
-## Repository Structure
+<a id="getting-started"></a>
+
+## 🚀 Getting Started
+
+### Repository Structure
 
 ```text
 .
@@ -66,7 +84,7 @@ The left panel validates the distinct stability boundaries of Polyak and Nestero
 
 The old CPU/GPU notebooks, duplicated plotting scripts, caches, temporary binaries, and redundant PDF files have been removed. The paper source is retained under `paper/` for direct comparison with the theorems, experimental configurations, and original figures.
 
-## Installation
+### Installation
 
 Python 3.10 or later is required. Creating an isolated environment is recommended:
 
@@ -86,7 +104,7 @@ python -m unittest discover -s tests -v
 momentum-scaling --help
 ```
 
-## Quick Reproduction
+### Quick Reproduction
 
 The quick preset checks the environment, device selection, and complete experiment pipeline. It normally finishes quickly, but it is **not a quantitative replacement for the paper configuration**.
 
@@ -116,7 +134,7 @@ results/quick/
 
 The JSON files record the configuration, device, random seed, means, and standard deviations for every experiment point. The NPZ file additionally stores the complete stability grid and per-seed stability boundaries for further inspection.
 
-## CPU, CUDA, and Apple Silicon
+### CPU, CUDA, and Apple Silicon
 
 ```bash
 # Automatic selection: CUDA, then MPS, then CPU
@@ -134,7 +152,7 @@ momentum-scaling all --preset quick --device mps --dtype float32
 
 MPS has limited support for `float64`. Therefore, `--dtype auto` selects `float32` on MPS and `float64` on CPU and CUDA. The paper-scale stability scan should be run on a CPU or CUDA GPU with double-precision support.
 
-## Reproducibility Notes
+### Reproducibility Notes
 
 - All random numbers are controlled by `--seed`.
 - Deterministic seed offsets are assigned to algorithms, experiment points, and independent repetitions.
