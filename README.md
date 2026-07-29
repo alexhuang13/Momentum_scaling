@@ -39,7 +39,53 @@ The repository contains the paper source and a unified PyTorch implementation of
 
 Nesterov's look-ahead correction makes its stable region grow faster with batch size, allowing it to reach the deterministic stability ceiling earlier than Polyak momentum.
 
-### 2. Data Scaling
+### 2. Excess-Risk Scaling Laws
+
+The expected excess risk admits a signal-learning and noise-accumulation decomposition:
+
+$$
+\mathbb{E}[\mathcal E(\theta_k)]
+\asymp
+\mathcal D(k)
++
+\frac{\eta^2}{B}
+\sum_{m=0}^{k-1}
+\mathcal K(k-1-m)
+\left(\mathbb{E}[\mathcal E(\theta_m)]+\sigma^2\right),
+$$
+
+where $\mathcal D(k)$ describes how the target signal is learned and $\mathcal K(\tau)$ describes how long stochastic noise remains in the dynamics. In the noisy setting, the leading long-time terms are
+
+$$
+\begin{aligned}
+\text{SGD:}\qquad
+\mathbb{E}[\mathcal E(\theta_k)]
+&\asymp
+(\eta k)^{-s}
++
+\frac{\eta\sigma^2}{B},\\
+\text{Polyak:}\qquad
+\mathbb{E}[\mathcal E(\theta_k)]
+&\asymp
+\left(\frac{1-\rho}{\eta k}\right)^s
++
+\frac{\eta\sigma^2}{B(1-\rho)},\\
+\text{Nesterov:}\qquad
+\mathbb{E}[\mathcal E(\theta_k)]
+&\asymp
+\left(\frac{1-\rho}{\eta k}\right)^s
++
+\frac{\sigma^2}{B}
+\min\left\{
+\frac{\eta}{1-\rho},
+\left(\frac{\eta}{1-\rho}\right)^{1/\beta}
+\right\},
+\end{aligned}
+$$
+
+up to exponentially decaying transient and lower-order multiplicative-noise terms. Both momentum methods accelerate signal learning through the effective learning rate $\eta/(1-\rho)$. Polyak momentum, however, amplifies label noise by the same factor, whereas Nesterov's curvature-dependent damping clips noise accumulation in sharper spectral directions. This difference is the mechanism behind Nesterov's improved data-scaling exponent.
+
+### 3. Data Scaling
 
 In the presence of label noise:
 
