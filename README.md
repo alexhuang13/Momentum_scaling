@@ -116,48 +116,6 @@ results/quick/
 
 The JSON files record the configuration, device, random seed, means, and standard deviations for every experiment point. The NPZ file additionally stores the complete stability grid and per-seed stability boundaries for further inspection.
 
-## Paper-Scale Reproduction
-
-### Stability Boundaries
-
-The paper configuration uses \(d=4096\), \(1-\rho=2^{-24}\), \(B=2^0,\ldots,2^{12}\), 50 learning rates, 2,000 optimization steps, and five random seeds.
-
-```bash
-momentum-scaling stability \
-  --preset paper \
-  --device cuda \
-  --dtype float64 \
-  --seed 0 \
-  --output-dir results/stability
-```
-
-Because \(1-\rho\) is extremely small, `float64` is recommended. With `float32`, \(\rho\) may be rounded to 1. This scan is computationally expensive and is best run on a CUDA GPU.
-
-### Data-Scaling Experiments
-
-The paper configuration uses \(d=4096\), \(s=0.3\), \(\beta=4\), \(\sigma=0.1\), and
-\(D\in\{2000,4000,8000,16000,32000,64000,128000\}\), with 100 independent repetitions per point.
-
-```bash
-momentum-scaling data-scaling \
-  --preset paper \
-  --device cuda \
-  --dtype float64 \
-  --seed 0 \
-  --output-dir results/data_scaling
-```
-
-This command runs both data-scaling experiments described in the paper appendix:
-
-1. **Polyak critical-batch experiment:** compares \(B\asymp D^{s/(s+1)}\) with \(B\asymp D^{2s/(s+1)}\).
-2. **Nesterov large-batch experiment:** uses the theoretically prescribed Nesterov batch-size scaling for all methods and averages the excess risk over the final 1% of optimization steps.
-
-To regenerate figures from existing result files without rerunning the experiments:
-
-```bash
-momentum-scaling plot --output-dir results/data_scaling
-```
-
 ## CPU, CUDA, and Apple Silicon
 
 ```bash
@@ -185,30 +143,3 @@ MPS has limited support for `float64`. Therefore, `--dtype auto` selects `float3
 - Following the paper appendix, the data-scaling experiment directly samples curvature-aligned Gaussian gradient noise.
 - Each run prints the Python version, PyTorch version, device, and dtype. The same information is stored in the result JSON files.
 - The `quick` preset is intended only as a smoke test. Paper-level conclusions should use the `paper` preset and 100 repetitions where specified.
-
-## Optimizer Conventions
-
-This repository follows the update equations used in the paper:
-
-\[
-\begin{aligned}
-\text{SGD: }&\theta_{k+1}=\theta_k-\eta\widehat g_k(\theta_k),\\
-\text{Polyak: }&\theta_{k+1}=\theta_k-\eta\widehat g_k(\theta_k)
-+\rho(\theta_k-\theta_{k-1}),\\
-\text{Nesterov: }&\widetilde\theta_k=\theta_k+\rho(\theta_k-\theta_{k-1}),\\
-&\theta_{k+1}=\widetilde\theta_k-\eta\widehat g_k(\widetilde\theta_k).
-\end{aligned}
-\]
-
-These conventions are not always identical to Nesterov implementations in deep-learning frameworks that use different learning-rate parameterizations. The repository therefore does not call a built-in framework optimizer.
-
-## Paper Source
-
-The main paper is located at `paper/main_arxiv.tex`. Experimental details are provided in the **Experimental Details** section of `paper/appendix.tex`.
-
-Compilation depends on the local TeX installation. A typical command is:
-
-```bash
-cd paper
-latexmk -pdf main_arxiv.tex
-```
