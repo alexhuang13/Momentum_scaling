@@ -23,7 +23,7 @@ where $\beta>1$ is the capacity exponent and $s>0$ is the source exponent. Small
 
 Our analysis connects mean-square stability with data scaling under a fixed budget $D=BK$, where $B$ is the batch size and $K$ is the number of optimization steps. It shows that Polyak momentum mainly enlarges the useful batch-size range, whereas Nesterov momentum can improve the optimal data-scaling exponent through curvature-dependent damping of stochastic noise.
 
-The repository contains the paper source and a unified PyTorch implementation of the numerical experiments. CPU, CUDA, and Apple Silicon runs share the same model and optimizer code; `--device` only selects the compute backend.
+This repository contains a unified PyTorch implementation of the numerical experiments. CPU, CUDA, and Apple Silicon runs share the same model and optimizer code; `--device` only selects the compute backend.
 
 <a id="main-results"></a>
 
@@ -121,7 +121,6 @@ The stability experiment confirms the different batch-size dependence of the Pol
 │   ├── plotting.py             # Generates figures from saved results
 │   └── cli.py                  # Unified command-line interface
 ├── tests/test_core.py          # Tests for the model and update equations
-├── paper/                      # LaTeX source, bibliography, and original figures
 ├── assets/figures/             # Selected reference figures
 ├── assets/results/             # Numerical means from the original notebook runs
 └── results/                    # New runtime outputs, excluded from version control
