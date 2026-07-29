@@ -76,10 +76,10 @@ $$
 (\frac{1-\rho}{\eta k})^s
 +
 \frac{\sigma^2}{B}
-\min\{
+\min \bigg\{
 \frac{\eta}{1-\rho},
 (\frac{\eta}{1-\rho})^{1/\beta}
-\},
+\bigg\},
 \end{aligned}
 $$
 
