@@ -1,0 +1,11 @@
+{
+  "description": "Reference means from the original four-configuration Polyak scaling notebook.",
+  "metric": "mean final excess loss over 100 trajectories",
+  "D": [2000, 4000, 8000, 16000, 32000, 64000, 128000],
+  "results": {
+    "sgd_large_batch": [0.1089354, 0.09811749, 0.08808962, 0.07851932, 0.06997692, 0.06257614, 0.05600328],
+    "polyak_large_batch": [0.1055689, 0.09100507, 0.07692650, 0.06534060, 0.05571177, 0.04739175, 0.04036277],
+    "sgd_small_batch": [0.1049789, 0.09002256, 0.07667888, 0.06505461, 0.05546884, 0.04728453, 0.04028620],
+    "polyak_small_batch": [0.1034190, 0.08890697, 0.07541469, 0.06413623, 0.05472532, 0.04651523, 0.03961503]
+  }
+}

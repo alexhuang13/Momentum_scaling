@@ -33,5 +33,16 @@ class CoreTests(unittest.TestCase):
         torch.testing.assert_close(actual, torch.tensor([1.7]))
 
 
+class ScalingScheduleTests(unittest.TestCase):
+    def test_focused_experiment_modules_import(self):
+        from momentum_scaling.scaling_experiments import (
+            D_PAPER, nesterov_scaling_experiment, polyak_scaling_experiment,
+        )
+
+        self.assertEqual(D_PAPER[0], 2000)
+        self.assertTrue(callable(polyak_scaling_experiment))
+        self.assertTrue(callable(nesterov_scaling_experiment))
+
+
 if __name__ == "__main__":
     unittest.main()

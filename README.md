@@ -54,11 +54,11 @@ In the presence of label noise:
 
 ### Key Numerical Results
 
-The left panel validates the distinct stability boundaries of Polyak and Nesterov momentum. The middle panel shows that Polyak momentum preserves the optimal scaling rate beyond SGD's critical batch size. The right panel shows that Nesterov momentum achieves a faster data-scaling rate in the large-batch regime.
+The stability experiment confirms the different batch-size dependence of the Polyak and Nesterov stability boundaries. The two scaling experiments then show that Polyak preserves the optimal rate at larger batches, while Nesterov achieves the fastest decay under a shared Nesterov-optimal batch scaling.
 
-| Stability boundary | Polyak critical batch size | Nesterov large-batch acceleration |
+| Stability boundary | Polyak batch scaling | Nesterov large-batch scaling |
 |---|---|---|
-| ![Stability boundary](assets/figures/beta1_5s2_plot.png) | ![Polyak scaling](assets/figures/mom_large_batch.png) | ![Nesterov scaling](assets/figures/nag_acc.png) |
+| ![Stability boundary](assets/figures/beta1_5s2_plot.png) | ![Polyak scaling](assets/figures/polyak_scaling.png) | ![Nesterov scaling](assets/figures/nesterov_scaling.png) |
 
 <a id="getting-started"></a>
 
@@ -73,16 +73,18 @@ The left panel validates the distinct stability boundaries of Polyak and Nestero
 ├── requirements.txt
 ├── src/momentum_scaling/
 │   ├── core.py                 # Power-law problem, shared backend, and optimizers
-│   ├── experiments.py          # Stability and data-scaling experiments
+│   ├── experiments.py          # Stability and combined scaling experiments
+│   ├── scaling_experiments.py  # Focused Polyak and Nesterov scaling studies
 │   ├── plotting.py             # Generates figures from saved results
 │   └── cli.py                  # Unified command-line interface
 ├── tests/test_core.py          # Tests for the model and update equations
 ├── paper/                      # LaTeX source, bibliography, and original figures
-├── assets/figures/             # Key PNG figures displayed in this README
-└── results/                    # Runtime outputs, excluded from version control
+├── assets/figures/             # Selected reference figures
+├── assets/results/             # Numerical means from the original notebook runs
+└── results/                    # New runtime outputs, excluded from version control
 ```
 
-The old CPU/GPU notebooks, duplicated plotting scripts, caches, temporary binaries, and redundant PDF files have been removed. The paper source is retained under `paper/` for direct comparison with the theorems, experimental configurations, and original figures.
+Exploratory notebooks, duplicated CPU/GPU implementations, caches, and generated files have been removed from `src/`. Reusable experiments live in the Python package, while selected paper-quality figures are stored under `assets/figures/`.
 
 ### Installation
 
@@ -112,6 +114,13 @@ The quick preset checks the environment, device selection, and complete experime
 momentum-scaling all --preset quick --device auto --output-dir results/quick
 ```
 
+The two focused scaling experiments can be run independently:
+
+```bash
+momentum-scaling polyak-scaling --preset quick --device auto --output-dir results/polyak
+momentum-scaling nesterov-scaling --preset quick --device auto --output-dir results/nesterov
+```
+
 The experiments can also be run without installing the command-line entry point:
 
 ```bash
@@ -127,12 +136,15 @@ results/quick/
 ├── stability.npz
 ├── stability.png
 ├── stability.pdf
-├── data_scaling.json
-├── data_scaling.png
-└── data_scaling.pdf
+├── polyak_scaling.json
+├── polyak_scaling.png
+├── polyak_scaling.pdf
+├── nesterov_scaling.json
+├── nesterov_scaling.png
+└── nesterov_scaling.pdf
 ```
 
-The JSON files record the configuration, device, random seed, means, and standard deviations for every experiment point. The NPZ file additionally stores the complete stability grid and per-seed stability boundaries for further inspection.
+The JSON files record the configuration, device, random seed, schedules, means, standard deviations, and fitted scaling exponents. The NPZ file stores the complete stability grid and per-seed stability boundaries.
 
 ### CPU, CUDA, and Apple Silicon
 

@@ -37,29 +37,43 @@ def plot_stability(payload: dict, output_dir: Path) -> None:
     _save(fig, output_dir / "stability")
 
 
-def _curve(ax, records, name):
-    d = np.asarray([r["D"] for r in records], dtype=float)
-    mean = np.asarray([r["mean"] for r in records])
-    std = np.asarray([r["std"] for r in records])
-    ax.errorbar(d, mean, yerr=std, marker=MARKERS[name], color=COLORS[name], label=name, capsize=2)
+
+SCALING_MARKERS = {
+    "sgd_large_batch": "o",
+    "polyak_large_batch": "^",
+    "sgd_small_batch": "s",
+    "polyak_small_batch": "D",
+    "sgd": "o",
+    "polyak": "^",
+    "nesterov": "s",
+}
 
 
-def plot_data_scaling(payload: dict, output_dir: Path) -> None:
-    fig, axes = plt.subplots(1, 3, figsize=(13.2, 4.1))
-    polyak = payload["polyak_critical_batch"]
-    for ax, regime, title in zip(axes[:2], ("small_batch", "large_batch"), ("Polyak: smaller batch", "Polyak: larger batch")):
-        for name, records in polyak[regime].items(): _curve(ax, records, name)
-        ax.set_title(title)
-    for name, records in payload["nesterov_large_batch"]["results"].items(): _curve(axes[2], records, name)
-    axes[2].set_title("Nesterov-optimal large batch")
-    for ax in axes:
-        ax.set(xscale="log", yscale="log", xlabel="data budget D", ylabel="final excess risk")
-        ax.grid(True, which="both", alpha=0.25); ax.legend()
-    _save(fig, output_dir / "data_scaling")
+def plot_scaling_experiment(payload: dict, output_dir: Path) -> None:
+    """Plot measured points and theory lines for a focused scaling experiment."""
+    fig, ax = plt.subplots(figsize=(5.8, 4.6))
+    anchor_index = min(3, len(payload["config"]["D"]) - 1)
+    for name, records in payload["results"].items():
+        group = payload["groups"][name]
+        data = np.asarray([record["D"] for record in records], dtype=float)
+        loss = np.asarray([record["mean"] for record in records], dtype=float)
+        points, = ax.plot(
+            data, loss, linestyle="None", marker=SCALING_MARKERS[name],
+            label=group["label"], zorder=3,
+        )
+        exponent = float(group["theory_exponent"])
+        reference = loss[anchor_index] * (data / data[anchor_index]) ** (-exponent)
+        ax.plot(data, reference, "--", color=points.get_color(), zorder=2)
+    ax.set(xscale="log", yscale="log", xlabel="Data budget D", ylabel="Excess loss")
+    ax.grid(True, which="both", alpha=0.2)
+    ax.legend()
+    _save(fig, output_dir / payload["experiment"])
 
 
 def plot_saved(output_dir: Path) -> None:
     stability = output_dir / "stability.json"
-    scaling = output_dir / "data_scaling.json"
     if stability.exists(): plot_stability(json.loads(stability.read_text()), output_dir)
-    if scaling.exists(): plot_data_scaling(json.loads(scaling.read_text()), output_dir)
+    for name in ("polyak_scaling", "nesterov_scaling"):
+        path = output_dir / f"{name}.json"
+        if path.exists():
+            plot_scaling_experiment(json.loads(path.read_text()), output_dir)

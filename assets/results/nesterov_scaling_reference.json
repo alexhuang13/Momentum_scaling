@@ -1,0 +1,10 @@
+{
+  "description": "Reference means from the original shared-batch Nesterov scaling notebook.",
+  "metric": "mean excess loss over the final 1% of steps and 100 trajectories",
+  "D": [2000, 4000, 8000, 16000, 32000, 64000, 128000],
+  "results": {
+    "sgd": [0.06464436, 0.05665320, 0.05130149, 0.04524733, 0.03919291, 0.03511475, 0.03118346],
+    "polyak": [0.06006202, 0.05115406, 0.04467540, 0.03790239, 0.03167988, 0.02728144, 0.02327396],
+    "nesterov": [0.04406339, 0.03493404, 0.02910485, 0.02353943, 0.01854985, 0.01519904, 0.01230449]
+  }
+}

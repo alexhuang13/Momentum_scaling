@@ -9,13 +9,14 @@ import platform
 import torch
 
 from .core import resolve_device, resolve_dtype, seed_everything
-from .experiments import Runtime, data_scaling_experiment, stability_experiment
-from .plotting import plot_data_scaling, plot_saved, plot_stability
+from .experiments import Runtime, stability_experiment
+from .scaling_experiments import nesterov_scaling_experiment, polyak_scaling_experiment
+from .plotting import plot_saved, plot_scaling_experiment, plot_stability
 
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Reproduce momentum-scaling experiments")
-    p.add_argument("experiment", choices=("stability", "data-scaling", "all", "plot"))
+    p.add_argument("experiment", choices=("stability", "data-scaling", "polyak-scaling", "nesterov-scaling", "all", "plot"))
     p.add_argument("--preset", choices=("quick", "paper"), default="quick")
     p.add_argument("--device", default="auto", help="auto, cpu, cuda, cuda:0, or mps")
     p.add_argument("--dtype", choices=("auto", "float32", "float64"), default="auto")
@@ -39,9 +40,16 @@ def main() -> None:
     if args.experiment in ("stability", "all"):
         payload = stability_experiment(runtime, quick=quick)
         plot_stability(payload, args.output_dir)
-    if args.experiment in ("data-scaling", "all"):
-        payload = data_scaling_experiment(runtime, quick=quick)
-        plot_data_scaling(payload, args.output_dir)
+    if args.experiment in ("data-scaling", "polyak-scaling", "all"):
+        payload = polyak_scaling_experiment(
+            device=device, dtype=dtype, seed=args.seed, output_dir=args.output_dir, quick=quick
+        )
+        plot_scaling_experiment(payload, args.output_dir)
+    if args.experiment in ("data-scaling", "nesterov-scaling", "all"):
+        payload = nesterov_scaling_experiment(
+            device=device, dtype=dtype, seed=args.seed, output_dir=args.output_dir, quick=quick
+        )
+        plot_scaling_experiment(payload, args.output_dir)
 
 
 if __name__ == "__main__":
