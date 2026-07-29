@@ -91,10 +91,7 @@ In the presence of label noise:
 
 - SGD achieves the optimal data-scaling rate $D^{-s/(s+1)}$.
 - Polyak momentum achieves the same optimal rate but preserves it over a substantially larger range of batch sizes.
-- Nesterov momentum achieves the faster rate
-  $$
-  D^{-\frac{2s\beta}{2s\beta+\beta+1}+o(1)}.
-  $$
+- Nesterov momentum achieves the faster rate$D^{-\frac{2s\beta}{2s\beta+\beta+1}+o(1)}$.
 
 ![Batch-size phase diagram](assets/figures/rate_diagram.png)
 
