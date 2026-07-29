@@ -16,7 +16,7 @@ In this work, we study **SGD**, **Polyak heavy-ball momentum**, and **Nesterov m
 
 $$
 \lambda_j \asymp j^{-\beta}, \qquad
-\lambda_j |\theta_j^\star|^2 \asymp j^{-(1+s\beta)},
+\lambda_j |\theta_j^*|^2 \asymp j^{-(1+s\beta)},
 $$
 
 where $\beta>1$ is the capacity exponent and $s>0$ is the source exponent. Smaller $s$ places more target energy in low-curvature directions and therefore corresponds to a harder learning problem.
@@ -51,7 +51,7 @@ $$
 \frac{\eta^2}{B}
 \sum_{m=0}^{k-1}
 \mathcal K(k-1-m)
-\left(\mathbb{E}[\mathcal E(\theta_m)]+\sigma^2\right),
+(\mathbb{E}[\mathcal E(\theta_m)]+\sigma^2),
 $$
 
 where $\mathcal D(k)$ describes how the target signal is learned and $\mathcal K(\tau)$ describes how long stochastic noise remains in the dynamics. In the noisy setting, the leading long-time terms are
@@ -67,19 +67,19 @@ $$
 \text{Polyak:}\qquad
 \mathbb{E}[\mathcal E(\theta_k)]
 &\asymp
-\left(\frac{1-\rho}{\eta k}\right)^s
+(\frac{1-\rho}{\eta k})^s
 +
 \frac{\eta\sigma^2}{B(1-\rho)},\\
 \text{Nesterov:}\qquad
 \mathbb{E}[\mathcal E(\theta_k)]
 &\asymp
-\left(\frac{1-\rho}{\eta k}\right)^s
+(\frac{1-\rho}{\eta k})^s
 +
 \frac{\sigma^2}{B}
-\min\left\{
+\min\{
 \frac{\eta}{1-\rho},
-\left(\frac{\eta}{1-\rho}\right)^{1/\beta}
-\right\},
+(\frac{\eta}{1-\rho})^{1/\beta}
+\},
 \end{aligned}
 $$
 
