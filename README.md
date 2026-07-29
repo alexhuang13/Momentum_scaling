@@ -1,74 +1,74 @@
 # From Polyak to Nesterov: Momentum Scaling in Power-Law Kernel Regression
 
-本仓库是论文 **“From Polyak to Nesterov: Landscape-Aware Momentum Methods May Improve Stability and Data Scaling”** 的精简复现实验代码。研究对象是具有幂律谱的高维核回归，比较 **SGD、Polyak heavy-ball momentum** 与 **Nesterov momentum** 在随机梯度下的稳定性、临界 batch size 和数据缩放规律。
+This repository provides a streamlined implementation for reproducing the experiments in **“From Polyak to Nesterov: Landscape-Aware Momentum Methods May Improve Stability and Data Scaling.”** It studies stochastic optimization in high-dimensional power-law kernel regression and compares **SGD**, **Polyak heavy-ball momentum**, and **Nesterov momentum** in terms of stability, critical batch size, and data-scaling behavior.
 
-> 仓库已将原先分离且大量重复的 CPU/GPU notebook 合并为一套 PyTorch 实现。`--device` 只决定计算设备，模型、随机过程、优化器更新和实验配置均共用同一份代码。
+> The former duplicated CPU and GPU notebooks have been replaced by a single PyTorch implementation. The `--device` option only changes the compute device; the model, random process, optimizer updates, and experiment configurations all share the same code.
 
-## 主要结论
+## Main Results
 
-设特征协方差谱和目标满足
+The feature covariance spectrum and target satisfy
 
 \[
 \lambda_j \asymp j^{-\beta}, \qquad
 \lambda_j |\theta_j^\star|^2 \asymp j^{-(1+s\beta)},
 \]
 
-其中 \(\beta>1\) 是 capacity exponent，\(s>0\) 是 source exponent。数据预算记为 \(D=BK\)，其中 \(B\) 是 batch size，\(K\) 是迭代步数。
+where \(\beta>1\) is the capacity exponent and \(s>0\) is the source exponent. The data budget is \(D=BK\), where \(B\) is the batch size and \(K\) is the number of optimization steps.
 
-### 1. 随机稳定性边界
+### 1. Stochastic Stability Boundaries
 
-| 方法 | 临界学习率 |
+| Method | Critical learning rate |
 |---|---|
-| SGD | \(\eta_{\rm stab}\asymp 1\) |
-| Polyak | \(\eta_{\rm stab}\asymp \min\{1,B(1-\rho)\}\) |
-| Nesterov | \(\eta_{\rm stab}\asymp \min\{1,B^\beta(1-\rho)\}\) |
+| SGD | \(\eta_{\mathrm{stab}}\asymp 1\) |
+| Polyak | \(\eta_{\mathrm{stab}}\asymp \min\{1,B(1-\rho)\}\) |
+| Nesterov | \(\eta_{\mathrm{stab}}\asymp \min\{1,B^\beta(1-\rho)\}\) |
 
-Nesterov 的 look-ahead 修正使稳定区域对 batch size 的增长更快，因此比 Polyak 更早达到确定性稳定上限。
+Nesterov's look-ahead correction makes its stable region grow faster with batch size, allowing it to reach the deterministic stability ceiling earlier than Polyak momentum.
 
-### 2. 数据缩放
+### 2. Data Scaling
 
-在有标签噪声时：
+In the presence of label noise:
 
-- SGD 的最优数据率为 \(D^{-s/(s+1)}\)；
-- Polyak 保持相同的最优率，但能在更大的 batch size 范围内保持该速度；
-- Nesterov 可达到更快的
+- SGD achieves the optimal data-scaling rate \(D^{-s/(s+1)}\).
+- Polyak momentum achieves the same optimal rate but preserves it over a substantially larger range of batch sizes.
+- Nesterov momentum achieves the faster rate
   \[
   D^{-\frac{2s\beta}{2s\beta+\beta+1}+o(1)}.
   \]
 
 ![Batch-size phase diagram](assets/figures/rate_diagram.png)
 
-## 论文中的核心数值结果
+## Key Numerical Results from the Paper
 
-下图左侧验证 Polyak 与 Nesterov 不同的稳定性边界；中间展示 Polyak 在超过 SGD 临界 batch 后仍能保持最优缩放；右侧展示 Nesterov 在大 batch 设置下取得更快的数据缩放率。
+The left panel validates the distinct stability boundaries of Polyak and Nesterov momentum. The middle panel shows that Polyak momentum preserves the optimal scaling rate beyond SGD's critical batch size. The right panel shows that Nesterov momentum achieves a faster data-scaling rate in the large-batch regime.
 
-| 稳定性边界 | Polyak 临界 batch | Nesterov 大 batch 加速 |
+| Stability boundary | Polyak critical batch size | Nesterov large-batch acceleration |
 |---|---|---|
 | ![Stability boundary](assets/figures/beta1_5s2_plot.png) | ![Polyak scaling](assets/figures/mom_large_batch.png) | ![Nesterov scaling](assets/figures/nag_acc.png) |
 
-## 仓库结构
+## Repository Structure
 
 ```text
 .
 ├── README.md
-├── pyproject.toml              # 可编辑安装与命令行入口
+├── pyproject.toml              # Editable installation and CLI entry point
 ├── requirements.txt
 ├── src/momentum_scaling/
-│   ├── core.py                 # 幂律问题、统一 CPU/GPU 后端、三种优化器
-│   ├── experiments.py          # 稳定性与数据缩放实验
-│   ├── plotting.py             # 从结果文件生成图（README 不包含画图代码）
-│   └── cli.py                  # 统一命令行入口
-├── tests/test_core.py          # 核心公式与更新规则测试
-├── paper/                      # 论文 LaTeX、参考文献和论文原图
-├── assets/figures/             # README 使用的关键 PNG 图片
-└── results/                    # 运行时输出；默认不纳入版本控制
+│   ├── core.py                 # Power-law problem, shared backend, and optimizers
+│   ├── experiments.py          # Stability and data-scaling experiments
+│   ├── plotting.py             # Generates figures from saved results
+│   └── cli.py                  # Unified command-line interface
+├── tests/test_core.py          # Tests for the model and update equations
+├── paper/                      # LaTeX source, bibliography, and original figures
+├── assets/figures/             # Key PNG figures displayed in this README
+└── results/                    # Runtime outputs, excluded from version control
 ```
 
-旧版 CPU/GPU notebook、重复画图脚本、缓存、临时二进制和重复 PDF 已移除。论文源码保留在 `paper/`，可直接核对定理、实验配置和原始图。
+The old CPU/GPU notebooks, duplicated plotting scripts, caches, temporary binaries, and redundant PDF files have been removed. The paper source is retained under `paper/` for direct comparison with the theorems, experimental configurations, and original figures.
 
-## 安装
+## Installation
 
-需要 Python 3.10 或更高版本。建议创建独立环境：
+Python 3.10 or later is required. Creating an isolated environment is recommended:
 
 ```bash
 python3 -m venv .venv
@@ -77,31 +77,31 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-`requirements.txt` 仅包含 NumPy、PyTorch 和 Matplotlib。若使用 NVIDIA GPU，请按照 PyTorch 官方说明安装与本机 CUDA 匹配的 PyTorch wheel，再执行 `python -m pip install -e .`。
+`requirements.txt` contains only NumPy, PyTorch, and Matplotlib. For NVIDIA GPUs, first install the PyTorch build that matches the local CUDA version, then run `python -m pip install -e .`.
 
-检查安装：
+Verify the installation with:
 
 ```bash
 python -m unittest discover -s tests -v
 momentum-scaling --help
 ```
 
-## 快速复现
+## Quick Reproduction
 
-快速配置用于检查环境、设备和完整数据流，通常只需较短时间，但**不应作为论文图的定量替代**：
+The quick preset checks the environment, device selection, and complete experiment pipeline. It normally finishes quickly, but it is **not a quantitative replacement for the paper configuration**.
 
 ```bash
 momentum-scaling all --preset quick --device auto --output-dir results/quick
 ```
 
-也可不安装命令行脚本，直接运行：
+The experiments can also be run without installing the command-line entry point:
 
 ```bash
 PYTHONPATH=src python -m momentum_scaling.cli all \
   --preset quick --device auto --output-dir results/quick
 ```
 
-输出包括：
+The generated files are:
 
 ```text
 results/quick/
@@ -114,13 +114,13 @@ results/quick/
 └── data_scaling.pdf
 ```
 
-JSON 保存配置、设备、随机种子、各实验点均值和标准差；NPZ 额外保存稳定性扫描的完整布尔网格与逐 seed 边界，方便复查。
+The JSON files record the configuration, device, random seed, means, and standard deviations for every experiment point. The NPZ file additionally stores the complete stability grid and per-seed stability boundaries for further inspection.
 
-## 论文配置复现
+## Paper-Scale Reproduction
 
-### 稳定性边界
+### Stability Boundaries
 
-论文设置：\(d=4096\)、\(1-\rho=2^{-24}\)、\(B=2^0,\ldots,2^{12}\)、50 个学习率、2000 步、5 个随机种子。
+The paper configuration uses \(d=4096\), \(1-\rho=2^{-24}\), \(B=2^0,\ldots,2^{12}\), 50 learning rates, 2,000 optimization steps, and five random seeds.
 
 ```bash
 momentum-scaling stability \
@@ -131,11 +131,12 @@ momentum-scaling stability \
   --output-dir results/stability
 ```
 
-由于 \(1-\rho\) 极小，建议使用 `float64`；`float32` 可能将 \(\rho\) 舍入为 1。该扫描计算量较大，推荐 CUDA GPU。
+Because \(1-\rho\) is extremely small, `float64` is recommended. With `float32`, \(\rho\) may be rounded to 1. This scan is computationally expensive and is best run on a CUDA GPU.
 
-### 数据缩放实验
+### Data-Scaling Experiments
 
-论文设置：\(d=4096\)、\(s=0.3\)、\(\beta=4\)、\(\sigma=0.1\)、\(D\in\{2000,4000,\ldots,128000\}\)，每点 100 个独立重复。
+The paper configuration uses \(d=4096\), \(s=0.3\), \(\beta=4\), \(\sigma=0.1\), and
+\(D\in\{2000,4000,8000,16000,32000,64000,128000\}\), with 100 independent repetitions per point.
 
 ```bash
 momentum-scaling data-scaling \
@@ -146,47 +147,48 @@ momentum-scaling data-scaling \
   --output-dir results/data_scaling
 ```
 
-该命令同时运行论文附录中的两组配置：
+This command runs both data-scaling experiments described in the paper appendix:
 
-1. **Polyak critical-batch experiment**：比较 \(B\asymp D^{s/(s+1)}\) 与 \(B\asymp D^{2s/(s+1)}\)；
-2. **Nesterov large-batch experiment**：所有方法使用 Nesterov 理论指定的大 batch scaling，并对最后 1% 迭代的 excess risk 求平均。
+1. **Polyak critical-batch experiment:** compares \(B\asymp D^{s/(s+1)}\) with \(B\asymp D^{2s/(s+1)}\).
+2. **Nesterov large-batch experiment:** uses the theoretically prescribed Nesterov batch-size scaling for all methods and averages the excess risk over the final 1% of optimization steps.
 
-已有结果只需重新绘图时：
+To regenerate figures from existing result files without rerunning the experiments:
 
 ```bash
 momentum-scaling plot --output-dir results/data_scaling
 ```
 
-## CPU、CUDA 与 Apple Silicon
+## CPU, CUDA, and Apple Silicon
 
 ```bash
-# 自动选择：CUDA > MPS > CPU
+# Automatic selection: CUDA, then MPS, then CPU
 momentum-scaling all --preset quick --device auto
 
-# 强制 CPU
+# Force CPU execution
 momentum-scaling all --preset quick --device cpu --dtype float64
 
-# 指定 NVIDIA GPU
+# Select an NVIDIA GPU
 momentum-scaling all --preset quick --device cuda:0 --dtype float64
 
 # Apple Silicon
 momentum-scaling all --preset quick --device mps --dtype float32
 ```
 
-MPS 对 `float64` 支持有限，因此 `--dtype auto` 在 MPS 上选择 `float32`，在 CPU/CUDA 上选择 `float64`。论文稳定性扫描仍建议使用支持双精度的 CPU 或 CUDA GPU。
+MPS has limited support for `float64`. Therefore, `--dtype auto` selects `float32` on MPS and `float64` on CPU and CUDA. The paper-scale stability scan should be run on a CPU or CUDA GPU with double-precision support.
 
-## 可复现性说明
+## Reproducibility Notes
 
-- 所有随机数由 `--seed` 控制，并为算法、实验点和重复试验使用确定性的 seed 偏移；
-- CPU 与 GPU 共享同一数学实现，但不同硬件/BLAS/CUDA 版本可能产生微小浮点差异；
-- 稳定性实验使用真实 Gaussian mini-batch，并分块计算梯度以限制显存/内存；
-- 数据缩放实验按照论文附录，直接采样 curvature-aligned Gaussian gradient noise；
-- 每次运行都会在终端记录 Python、PyTorch、device 和 dtype，并写入结果 JSON；
-- `quick` 只做 smoke test；论文结论应使用 `paper` preset 和论文规定的 100 次重复。
+- All random numbers are controlled by `--seed`.
+- Deterministic seed offsets are assigned to algorithms, experiment points, and independent repetitions.
+- CPU and GPU runs share the same mathematical implementation, although small floating-point differences may remain across hardware, BLAS, and CUDA versions.
+- The stability experiment uses fresh Gaussian mini-batches and computes gradients in chunks to limit memory use.
+- Following the paper appendix, the data-scaling experiment directly samples curvature-aligned Gaussian gradient noise.
+- Each run prints the Python version, PyTorch version, device, and dtype. The same information is stored in the result JSON files.
+- The `quick` preset is intended only as a smoke test. Paper-level conclusions should use the `paper` preset and 100 repetitions where specified.
 
-## 优化器约定
+## Optimizer Conventions
 
-本仓库严格使用论文中的更新：
+This repository follows the update equations used in the paper:
 
 \[
 \begin{aligned}
@@ -198,11 +200,13 @@ MPS 对 `float64` 支持有限，因此 `--dtype auto` 在 MPS 上选择 `float3
 \end{aligned}
 \]
 
-这与某些深度学习框架中带特定学习率重参数化的 Nesterov 实现不完全相同，因此代码没有直接调用框架内置 optimizer。
+These conventions are not always identical to Nesterov implementations in deep-learning frameworks that use different learning-rate parameterizations. The repository therefore does not call a built-in framework optimizer.
 
-## 论文源码
+## Paper Source
 
-论文正文位于 `paper/main_arxiv.tex`，实验细节位于 `paper/appendix.tex` 的 **Experimental Details**。编译方式取决于本机 TeX 环境，典型命令为：
+The main paper is located at `paper/main_arxiv.tex`. Experimental details are provided in the **Experimental Details** section of `paper/appendix.tex`.
+
+Compilation depends on the local TeX installation. A typical command is:
 
 ```bash
 cd paper
