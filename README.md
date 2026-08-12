@@ -43,15 +43,15 @@ This repository contains a unified PyTorch implementation of the numerical exper
   <tbody>
     <tr>
       <td align="center">SGD</td>
-      <td align="center">η<sub>stab</sub> ≍ 1</td>
+      <td align="center">η<sub>crit</sub> ≍ 1</td>
     </tr>
     <tr>
       <td align="center">Polyak</td>
-      <td align="center">η<sub>stab</sub> ≍ min{1, B(1−ρ)}</td>
+      <td align="center">η<sub>crit</sub> ≍ min{1, B(1−ρ)}</td>
     </tr>
     <tr>
       <td align="center">Nesterov</td>
-      <td align="center">η<sub>stab</sub> ≍ min{1, B<sup>β</sup>(1−ρ)}</td>
+      <td align="center">η<sub>crit</sub> ≍ min{1, B<sup>β</sup>(1−ρ)}</td>
     </tr>
   </tbody>
 </table>
@@ -120,9 +120,9 @@ In the presence of label noise:
 
 The numerical section is organized around the same three experiment types used by the code: stability, scaling law, and data scaling. The stability scan shows the different batch-size dependence of Polyak and Nesterov stability boundaries; the long-time scaling-law run verifies the predicted signal-to-noise transition; and the data-scaling run highlights Nesterov's faster large-batch decay.
 
-| Stability boundary | Scaling-law loss curve | Nesterov data scaling |
+| Stability boundary | Scaling-law loss curve | Data Scaling |
 |---|---|---|
-| <img src="assets/figures/beta1_5s2_plot.png" alt="Stability boundary" width="300" height="240"> | <a href="assets/figures/scaling_law.pdf"><img src="assets/figures/scaling_law.png" alt="Scaling-law loss curve" width="300" height="240"></a> | <img src="assets/figures/nesterov_scaling.png" alt="Nesterov data scaling" width="300" height="240"> |
+| <img src="assets/figures/beta1_5s2_plot.png" alt="Stability boundary" width="300" height="240"> | <a href="assets/figures/scaling_law.pdf"><img src="assets/figures/scaling_law.png" alt="Scaling-law loss curve" width="300" height="240"></a> | <img src="assets/figures/nesterov_scaling.png" alt="Data Scaling" width="300" height="240"> |
 
 The middle panel is rendered from `assets/figures/scaling_law.pdf` and compares simulated long-time loss curves with the fitted scaling-law prediction.
 
