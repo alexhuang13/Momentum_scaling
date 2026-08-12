@@ -98,11 +98,13 @@ In the presence of label noise:
 
 ### Key Numerical Results
 
-The stability experiment confirms the different batch-size dependence of the Polyak and Nesterov stability boundaries. The two scaling experiments then show that Polyak preserves the optimal rate at larger batches, while Nesterov achieves the fastest decay under a shared Nesterov-optimal batch scaling.
+The numerical section is organized around the same three experiment types used by the code: stability, scaling law, and data scaling. The stability scan shows the different batch-size dependence of Polyak and Nesterov stability boundaries; the long-time scaling-law run verifies the predicted signal-to-noise transition; and the data-scaling run highlights Nesterov's faster large-batch decay.
 
-| Stability boundary | Polyak batch scaling | Nesterov large-batch scaling |
+| Stability boundary | Scaling-law loss curve | Nesterov data scaling |
 |---|---|---|
-| <img src="assets/figures/beta1_5s2_plot.png" alt="Stability boundary" width="300" height="240"> | <img src="assets/figures/polyak_scaling.png" alt="Polyak scaling" width="300" height="240"> | <img src="assets/figures/nesterov_scaling.png" alt="Nesterov scaling" width="300" height="240"> |
+| <img src="assets/figures/beta1_5s2_plot.png" alt="Stability boundary" width="300" height="240"> | <a href="assets/figures/scaling_law.pdf"><img src="assets/figures/scaling_law.png" alt="Scaling-law loss curve" width="300" height="240"></a> | <img src="assets/figures/nesterov_scaling.png" alt="Nesterov data scaling" width="300" height="240"> |
+
+The middle panel is rendered from `assets/figures/scaling_law.pdf` and compares simulated long-time loss curves with the fitted scaling-law prediction.
 
 <a id="experiments"></a>
 
