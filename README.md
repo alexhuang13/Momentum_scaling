@@ -4,7 +4,8 @@
   <a href="#introduction">📖 Introduction</a> •
   <a href="#main-results">📊 Main Results</a> •
   <a href="#experiments">🧪 Experiments</a> •
-  <a href="#getting-started">🚀 Getting Started</a>
+  <a href="#getting-started">🚀 Getting Started</a> •
+  <a href="#citation">📚 Citation</a>
 </p>
 
 <a id="introduction"></a>
@@ -32,11 +33,28 @@ This repository contains a unified PyTorch implementation of the numerical exper
 
 ### 1. Stochastic Stability Boundaries
 
-| Method | Critical learning rate |
-|---|---|
-| SGD | $\eta_{\mathrm{stab}}\asymp 1$ |
-| Polyak | $\eta_{\mathrm{stab}}\asymp \min\{1,B(1-\rho)\}$ |
-| Nesterov | $\eta_{\mathrm{stab}}\asymp \min\{1,B^\beta(1-\rho)\}$ |
+<table align="center">
+  <thead>
+    <tr>
+      <th align="center">Method</th>
+      <th align="center">Critical learning rate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">SGD</td>
+      <td align="center">η<sub>stab</sub> ≍ 1</td>
+    </tr>
+    <tr>
+      <td align="center">Polyak</td>
+      <td align="center">η<sub>stab</sub> ≍ min{1, B(1−ρ)}</td>
+    </tr>
+    <tr>
+      <td align="center">Nesterov</td>
+      <td align="center">η<sub>stab</sub> ≍ min{1, B<sup>β</sup>(1−ρ)}</td>
+    </tr>
+  </tbody>
+</table>
 
 Nesterov's look-ahead correction makes its stable region grow faster with batch size, allowing it to reach the deterministic stability ceiling earlier than Polyak momentum.
 
@@ -307,3 +325,19 @@ MPS has limited support for `float64`. Therefore, `--dtype auto` selects `float3
 - Following the paper appendix, the data-scaling experiment directly samples curvature-aligned Gaussian gradient noise.
 - Each run prints the Python version, PyTorch version, device, and dtype. The same information is stored in the result JSON files.
 - The `quick` preset is intended only as a smoke test. Paper-level conclusions should use the `paper` preset and 100 repetitions where specified.
+
+<a id="citation"></a>
+
+## 📚 Citation
+
+If you use this code or build on these experiments, please cite:
+
+```bibtex
+@misc{huang2026polyaktonesterov,
+  title = {From Polyak to Nesterov: Landscape-Aware Momentum Methods May Improve Stability and Data Scaling},
+  author = {Huang, Auden},
+  year = {2026},
+  howpublished = {\url{https://github.com/alexhuang13/Momentum_scaling}},
+  note = {Code repository}
+}
+```
