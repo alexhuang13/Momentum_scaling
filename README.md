@@ -43,15 +43,15 @@ This repository contains a unified PyTorch implementation of the numerical exper
   <tbody>
     <tr>
       <td align="center">SGD</td>
-      <td align="center">η<sub>crit</sub> ≍ 1</td>
+      <td align="center">η<sup>crit</sup> ≍ 1</td>
     </tr>
     <tr>
       <td align="center">Polyak</td>
-      <td align="center">η<sub>crit</sub> ≍ min{1, B(1−ρ)}</td>
+      <td align="center">η<sup>crit</sup> ≍ min{1, B(1−ρ)}</td>
     </tr>
     <tr>
       <td align="center">Nesterov</td>
-      <td align="center">η<sub>crit</sub> ≍ min{1, B<sup>β</sup>(1−ρ)}</td>
+      <td align="center">η<sup>crit</sup> ≍ min{1, B<sup>β</sup>(1−ρ)}</td>
     </tr>
   </tbody>
 </table>
