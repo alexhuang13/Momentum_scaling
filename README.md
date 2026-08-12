@@ -112,7 +112,7 @@ In the presence of label noise:
 - Polyak momentum achieves the same optimal rate but preserves it over a substantially larger range of batch sizes.
 - Nesterov momentum achieves the faster rate $D^{-2s\beta/(2s\beta+\beta+1)+o(1)}$.
 
-| Stability boundary schematic | Data-scaling phase diagram | Batch-size sweep |
+| Theoretical stability boundary | Data-scaling phase diagram | Critical batch size |
 |---|---|---|
 | <a href="assets/figures/polyak_nesterov_sgd_boundary_schematic.pdf"><img src="assets/figures/polyak_nesterov_sgd_boundary_schematic.png" alt="Stability boundary schematic" width="300"></a> | <a href="assets/figures/rate_diagram.pdf"><img src="assets/figures/rate_diagram.png" alt="Data-scaling phase diagram" width="300"></a> | <a href="assets/figures/cbs.pdf"><img src="assets/figures/cbs.png" alt="Batch-size sweep" width="300"></a> |
 
