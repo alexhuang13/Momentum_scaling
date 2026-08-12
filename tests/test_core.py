@@ -34,14 +34,20 @@ class CoreTests(unittest.TestCase):
 
 
 class ScalingScheduleTests(unittest.TestCase):
-    def test_focused_experiment_modules_import(self):
-        from momentum_scaling.scaling_experiments import (
+    def test_experiment_modules_import(self):
+        from momentum_scaling.stability import Runtime, stability_experiment
+        from momentum_scaling.scaling_law import ScalingLawRuntime, scaling_law_experiment
+        from momentum_scaling.data_scaling import (
             D_PAPER, nesterov_scaling_experiment, polyak_scaling_experiment,
         )
 
         self.assertEqual(D_PAPER[0], 2000)
+        self.assertTrue(callable(stability_experiment))
+        self.assertTrue(callable(scaling_law_experiment))
         self.assertTrue(callable(polyak_scaling_experiment))
         self.assertTrue(callable(nesterov_scaling_experiment))
+        self.assertTrue(Runtime)
+        self.assertTrue(ScalingLawRuntime)
 
 
 if __name__ == "__main__":

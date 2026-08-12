@@ -70,9 +70,43 @@ def plot_scaling_experiment(payload: dict, output_dir: Path) -> None:
     _save(fig, output_dir / payload["experiment"])
 
 
+def plot_scaling_law(payload: dict, output_dir: Path) -> None:
+    """Plot long-time empirical loss curves and fitted scaling-law predictions."""
+    colors = {
+        "polyak": {"empirical": "#f6bd83", "prediction": "#d55e00"},
+        "nesterov": {"empirical": "#9ecae1", "prediction": "#0072b2"},
+    }
+    fig, ax = plt.subplots(figsize=(5.8, 4.4))
+    for algorithm in ("polyak", "nesterov"):
+        if algorithm not in payload["results"]:
+            continue
+        result = payload["results"][algorithm]
+        steps = np.asarray(result["steps"], dtype=float)
+        empirical = np.asarray(result["empirical_loss"], dtype=float)
+        prediction = np.asarray(result["theory_prediction"], dtype=float)
+        valid = np.asarray(result["fit_valid_mask"], dtype=bool)
+        positive = steps > 0
+        ax.plot(
+            steps[positive], empirical[positive],
+            color=colors[algorithm]["empirical"], alpha=0.55, lw=1.4,
+            label=f"{result['label']} simulation",
+        )
+        ax.plot(
+            steps[valid], prediction[valid],
+            color=colors[algorithm]["prediction"], lw=1.8,
+            label=f"{result['label']} scaling law",
+        )
+    ax.set(xscale="log", yscale="log", xlabel="Optimization step k", ylabel="Excess loss")
+    ax.grid(True, which="both", alpha=0.2)
+    ax.legend()
+    _save(fig, output_dir / "scaling_law")
+
+
 def plot_saved(output_dir: Path) -> None:
     stability = output_dir / "stability.json"
     if stability.exists(): plot_stability(json.loads(stability.read_text()), output_dir)
+    scaling_law = output_dir / "scaling_law.json"
+    if scaling_law.exists(): plot_scaling_law(json.loads(scaling_law.read_text()), output_dir)
     for name in ("polyak_scaling", "nesterov_scaling"):
         path = output_dir / f"{name}.json"
         if path.exists():

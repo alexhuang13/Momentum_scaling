@@ -1,4 +1,4 @@
-"""Paper experiments and cache-friendly result serialization."""
+"""Stability-boundary experiment and cache-friendly result serialization."""
 
 from __future__ import annotations
 

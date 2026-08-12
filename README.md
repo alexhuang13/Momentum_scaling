@@ -3,6 +3,7 @@
 <p align="center">
   <a href="#introduction">📖 Introduction</a> •
   <a href="#main-results">📊 Main Results</a> •
+  <a href="#experiments">🧪 Experiments</a> •
   <a href="#getting-started">🚀 Getting Started</a>
 </p>
 
@@ -103,6 +104,85 @@ The stability experiment confirms the different batch-size dependence of the Pol
 |---|---|---|
 | <img src="assets/figures/beta1_5s2_plot.png" alt="Stability boundary" width="300" height="240"> | <img src="assets/figures/polyak_scaling.png" alt="Polyak scaling" width="300" height="240"> | <img src="assets/figures/nesterov_scaling.png" alt="Nesterov scaling" width="300" height="240"> |
 
+<a id="experiments"></a>
+
+## 🧪 Experiments
+
+The code is organized around the three experimental components of the project. Each component has its own source file and a directly runnable CLI entry point.
+
+| Experiment | Source file | CLI command | Main outputs |
+|---|---|---|---|
+| Stability | `src/momentum_scaling/stability.py` | `momentum-scaling stability` | `stability.json`, `stability.npz`, `stability.png`, `stability.pdf` |
+| Scaling law | `src/momentum_scaling/scaling_law.py` | `momentum-scaling scaling-law` | `scaling_law.json`, `scaling_law_polyak.npz`, `scaling_law_nesterov.npz`, `scaling_law.png`, `scaling_law.pdf` |
+| Data scaling | `src/momentum_scaling/data_scaling.py` | `momentum-scaling data-scaling` | `polyak_scaling.json/png/pdf`, `nesterov_scaling.json/png/pdf` |
+
+Shared model construction, optimizers, device selection, and stochastic-gradient utilities live in `src/momentum_scaling/core.py`. Plotting is kept separate in `src/momentum_scaling/plotting.py`, and `src/momentum_scaling/cli.py` only dispatches commands.
+
+### 1. Stability experiment
+
+This experiment scans the largest stable learning rate as a function of batch size. It uses fresh Gaussian mini-batches and compares SGD, Polyak momentum, and Nesterov momentum.
+
+```bash
+momentum-scaling stability --preset quick --device auto --output-dir results/stability
+```
+
+Use `--preset paper` for the larger configuration used to produce paper-quality stability boundaries.
+
+### 2. Scaling-law experiment
+
+This experiment fixes `B`, `eta`, and `rho`, then runs Polyak and Nesterov for many optimization steps. It checks the long-time loss curve against the scaling-law decomposition into transient, signal-learning, and noise-floor terms.
+
+```bash
+momentum-scaling scaling-law --preset quick --device auto --output-dir results/scaling_law
+```
+
+For $\eta_\rho=\eta/(1-\rho)$, the fitted prediction curves use
+
+$$
+L_{\rm Polyak}(k)
+\approx
+C_T\rho^k
++C_S(\eta_\rho k)^{-s}
++C_N\frac{\sigma^2}{B}\eta_\rho,
+$$
+
+and
+
+$$
+L_{\rm Nesterov}(k)
+\approx
+C_T
+\left(\frac{(1-\rho)^2}{\eta}\right)^{s+1/\beta}
+\left(\frac{4\rho^2}{(1+\rho)^2}\right)^k
++C_S(\eta_\rho k)^{-s}
++C_N\frac{\sigma^2}{B}\min\{\eta_\rho,\eta_\rho^{1/\beta}\}.
+$$
+
+The constants $C_T,C_S,C_N\ge0$ are fitted only to restore unspecified $O(1)$ factors in the asymptotic theory. The optional notebook `scaling_law/scaling_law.ipynb` contains the same long-time idea plus larger grid utilities for exploratory runs.
+
+### 3. Data-scaling experiment
+
+This experiment varies the total data budget $D=BK$ and measures how the final excess risk decays with $D$. It contains the focused Polyak batch-scaling study and the shared Nesterov-optimal large-batch study.
+
+```bash
+momentum-scaling data-scaling --preset quick --device auto --output-dir results/data_scaling
+```
+
+The two data-scaling sub-experiments can also be run independently:
+
+```bash
+momentum-scaling polyak-scaling --preset quick --device auto --output-dir results/polyak
+momentum-scaling nesterov-scaling --preset quick --device auto --output-dir results/nesterov
+```
+
+### Run all three
+
+```bash
+momentum-scaling all --preset quick --device auto --output-dir results/quick
+```
+
+The `quick` preset is a smoke test for correctness and device setup. For quantitative claims, use the `paper` preset and enough repetitions for the relevant experiment.
+
 <a id="getting-started"></a>
 
 ## 🚀 Getting Started
@@ -114,10 +194,13 @@ The stability experiment confirms the different batch-size dependence of the Pol
 ├── README.md
 ├── pyproject.toml              # Editable installation and CLI entry point
 ├── requirements.txt
+├── scaling_law/
+│   └── scaling_law.ipynb       # Optional exploratory notebook for long-time curves
 ├── src/momentum_scaling/
 │   ├── core.py                 # Power-law problem, shared backend, and optimizers
-│   ├── experiments.py          # Stability and combined scaling experiments
-│   ├── scaling_experiments.py  # Focused Polyak and Nesterov scaling studies
+│   ├── stability.py            # Stability-boundary experiment
+│   ├── scaling_law.py          # Long-time scaling-law experiment
+│   ├── data_scaling.py         # Data-budget scaling experiments
 │   ├── plotting.py             # Generates figures from saved results
 │   └── cli.py                  # Unified command-line interface
 ├── tests/test_core.py          # Tests for the model and update equations
@@ -126,7 +209,7 @@ The stability experiment confirms the different batch-size dependence of the Pol
 └── results/                    # New runtime outputs, excluded from version control
 ```
 
-Exploratory notebooks, duplicated CPU/GPU implementations, caches, and generated files have been removed from `src/`. Reusable experiments live in the Python package, while selected paper-quality figures are stored under `assets/figures/`.
+Exploratory notebooks, duplicated CPU/GPU implementations, caches, and generated files have been removed from `src/`. The three runnable experiment components live in separate Python files, selected paper-quality figures are stored under `assets/figures/`, and the remaining notebook under `scaling_law/` is optional exploratory material.
 
 ### Installation
 
@@ -150,7 +233,7 @@ momentum-scaling --help
 
 ### Quick Reproduction
 
-The quick preset checks the environment, device selection, and complete experiment pipeline. It normally finishes quickly, but it is **not a quantitative replacement for the paper configuration**.
+The quick preset checks the environment, device selection, and complete CLI experiment pipeline. It normally finishes quickly, but it is **not a quantitative replacement for the paper configuration**.
 
 ```bash
 momentum-scaling all --preset quick --device auto --output-dir results/quick
@@ -178,6 +261,11 @@ results/quick/
 ├── stability.npz
 ├── stability.png
 ├── stability.pdf
+├── scaling_law.json
+├── scaling_law_polyak.npz
+├── scaling_law_nesterov.npz
+├── scaling_law.png
+├── scaling_law.pdf
 ├── polyak_scaling.json
 ├── polyak_scaling.png
 ├── polyak_scaling.pdf
@@ -186,7 +274,7 @@ results/quick/
 └── nesterov_scaling.pdf
 ```
 
-The JSON files record the configuration, device, random seed, schedules, means, standard deviations, and fitted scaling exponents. The NPZ file stores the complete stability grid and per-seed stability boundaries.
+The JSON files record the configuration, device, random seed, schedules, means, standard deviations, and fitted exponents or scaling-law coefficients. The NPZ files store dense numerical arrays such as stability grids, per-seed boundaries, and long-time loss curves.
 
 ### CPU, CUDA, and Apple Silicon
 
