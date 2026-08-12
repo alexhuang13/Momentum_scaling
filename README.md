@@ -1,4 +1,4 @@
-# From Polyak to Nesterov: Landscape-Aware Momentum Methods May Improve Stability and Data Scaling
+# Momentum in Large-Batch Training: Polyak Enlarges the Critical Batch Size, Nesterov Improves Data Efficiency
 
 <p align="center">
   <a href="#introduction">📖 Introduction</a> •
