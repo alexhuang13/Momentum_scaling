@@ -333,11 +333,10 @@ MPS has limited support for `float64`. Therefore, `--dtype auto` selects `float3
 If you use this code or build on these experiments, please cite:
 
 ```bibtex
-@misc{huang2026polyaktonesterov,
-  title = {From Polyak to Nesterov: Landscape-Aware Momentum Methods May Improve Stability and Data Scaling},
-  author = {Huang, Auden},
+@misc{wang2026momentumlargebatch,
+  title = {Momentum in Large-Batch Training: Polyak Enlarges the Critical Batch Size, Nesterov Improves Data Efficiency},
+  author = {Wang, Jia-Nan and Huang, Zixun and Li, Kairui and Wu, Lei},
   year = {2026},
-  howpublished = {\url{https://github.com/alexhuang13/Momentum_scaling}},
-  note = {Code repository}
+  note = {Manuscript}
 }
 ```
