@@ -122,9 +122,9 @@ The numerical section is organized around the same three experiment types used b
 
 | Stability boundary | Scaling-law loss curve | Data Scaling |
 |---|---|---|
-| <img src="assets/figures/beta1_5s2_plot.png" alt="Stability boundary" width="300" height="240"> | <a href="assets/figures/scaling_law.pdf"><img src="assets/figures/scaling_law.png" alt="Scaling-law loss curve" width="300" height="240"></a> | <img src="assets/figures/nesterov_scaling.png" alt="Data Scaling" width="300" height="240"> |
+| <a href="assets/figures/beta1_5s2_plot.pdf"><img src="assets/figures/beta1_5s2_plot.png" alt="Stability boundary without background fills" width="300" height="240"></a> | <a href="assets/figures/scaling_law.pdf"><img src="assets/figures/scaling_law.png" alt="Scaling-law loss curve" width="300" height="240"></a> | <img src="assets/figures/nesterov_scaling.png" alt="Data Scaling" width="300" height="240"> |
 
-The middle panel is rendered from `assets/figures/scaling_law.pdf` and compares simulated long-time loss curves with the fitted scaling-law prediction.
+The left panel keeps the original algorithm colors without background region fills and links to `assets/figures/beta1_5s2_plot.pdf`; its legend contains only the three prediction curves, while marker shapes identify the empirical boundaries. The middle panel links to `assets/figures/scaling_law.pdf` and compares simulated long-time loss curves with the fitted scaling-law prediction.
 
 <a id="experiments"></a>
 
@@ -297,6 +297,25 @@ results/quick/
 ```
 
 The JSON files record the configuration, device, random seed, schedules, means, standard deviations, and fitted exponents or scaling-law coefficients. The NPZ files store dense numerical arrays such as stability grids, per-seed boundaries, and long-time loss curves.
+
+The original grids for eight stability settings are preserved under
+`assets/results/stability_beta*_s*_reference.npz`. The plotting script keeps the
+original green/blue/orange algorithm colors, removes the background region fills,
+and includes prediction lines for SGD, Polyak, and Nesterov. To keep the legend
+compact, empirical markers are unlabeled and only the three prediction curves
+appear in the legend.
+
+Recreate one setting or all eight settings with:
+
+```bash
+python scripts/plot_stability_reference.py --beta 1.5 --s 2
+python scripts/plot_stability_reference.py --all
+```
+
+The available settings are $(\beta,s)=(1.5,2),(1.5,3),(1.5,5),(2,2),(2,3),
+(2,5),(2.5,3),(2.5,5)$. Generated PNG and PDF files are stored under
+`assets/figures/` using names such as `beta1_5s3_plot.png` and
+`beta1_5s3_plot.pdf`.
 
 ### CPU, CUDA, and Apple Silicon
 

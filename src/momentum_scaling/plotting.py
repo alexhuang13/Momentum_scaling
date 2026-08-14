@@ -28,10 +28,16 @@ def _save(fig, stem: Path) -> None:
 
 
 def plot_stability(payload: dict, output_dir: Path) -> None:
+    """Plot colored stability boundaries without background region fills."""
     b = np.asarray(payload["config"]["batch_sizes"], dtype=float)
     fig, ax = plt.subplots(figsize=(6.8, 4.8))
     for name, values in payload["boundary"].items():
-        ax.plot(b, values, marker=MARKERS[name], color=COLORS[name], label=name)
+        ax.plot(
+            b, values,
+            color=COLORS[name],
+            marker=MARKERS[name],
+            label=name,
+        )
     ax.set(xscale="log", yscale="log", xlabel="batch size B", ylabel="largest stable learning rate")
     ax.grid(True, which="both", alpha=0.25); ax.legend()
     _save(fig, output_dir / "stability")
