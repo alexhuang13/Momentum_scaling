@@ -135,13 +135,29 @@ The $2\times3$ sweep uses $s\in\{0.3,0.5\}$ and $\beta\in\{2,4,6\}$. Pale curves
 
 The fits track both the oscillatory transient and the algebraic regime. For $s=0.5$, the late-time curves also expose Nesterov's lower noise floor increasingly clearly as $\beta$ grows.
 
-#### Representative long-time and data-scaling results
+#### Time-domain transitions
 
-| Long-time loss scaling | Large-batch data scaling |
+| Long-time loss scaling | Transition time versus $1-\rho$ |
 |---|---|
-| <a href="new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.pdf"><img src="new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.png" alt="Empirical long-time loss and scaling-law predictions" width="430"></a> | <a href="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="430"></a> |
+| <a href="new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.pdf"><img src="new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.png" alt="Empirical long-time loss and scaling-law predictions" width="430"></a> | <a href="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.pdf"><img src="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.png" alt="Derivative-detected transition versus momentum gap" width="430"></a> |
 
-In the representative large-batch run at $(s,\beta)=(0.3,4)$, the theoretical/measured decay exponents are $0.1772/0.1787$ for SGD, $0.2308/0.2321$ for Polyak, and $0.3039/0.3074$ for Nesterov. The full small-, large-, and ultra-large-batch comparison is summarized below.
+The transition from the oscillatory transient to algebraic scaling occurs at $k_{\rm tr}\propto(1-\rho)^{-1}$. Nesterov enters the scaling regime slightly earlier and reaches its lower noise-dominated regime later than Polyak.
+
+#### Data scaling across three batch-size regimes
+
+| Small batch | Large batch | Ultra-large batch |
+|---|---|---|
+| <a href="new_scaling/nag_acc_three_phases/s0.3beta4/small_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/small_batch.png" alt="Small-batch data scaling" width="280"></a> | <a href="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="280"></a> | <a href="new_scaling/nag_acc_three_phases/s0.3beta4/super_large_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/super_large_batch.png" alt="Ultra-large-batch data scaling" width="280"></a> |
+
+For $(s,\beta)=(0.3,4)$, all three methods share the same small-batch exponent. Nesterov is fastest in the large-batch regime, while Polyak and Nesterov share the same exponent once the batch is ultra-large. In the large-batch run, the theoretical/measured exponents are $0.1772/0.1787$ for SGD, $0.2308/0.2321$ for Polyak, and $0.3039/0.3074$ for Nesterov.
+
+#### Fixed-budget batch size and momentum schedule
+
+| Critical batch-size sweep | Increasing-momentum diagnostic |
+|---|---|
+| <a href="new_scaling/cbs/s_0.3_beta_4/cbs.pdf"><img src="new_scaling/cbs/s_0.3_beta_4/cbs.png" alt="Fixed-budget critical batch-size sweep" width="430"></a> | <a href="new_scaling/blowup/blowup_time.pdf"><img src="new_scaling/blowup/blowup_time.png" alt="Loss under an increasingly aggressive momentum schedule" width="430"></a> |
+
+At fixed $D=2^{14}$, Nesterov attains the lowest loss and shifts the best batch size upward. Under $\rho_k=1-1/(k+1)$, Polyak eventually becomes unstable, whereas Nesterov remains stable over the saved 500,000-step horizon.
 
 <a id="experiments"></a>
 
@@ -276,11 +292,7 @@ The long run at $(s,\beta)=(0.5,4)$ uses $B=64$, $\eta=0.06$, $1-\rho=0.03$, $\s
 
 The slopes are close to $-1$, so the first transition scales approximately as $k_{\rm tr}\propto(1-\rho)^{-1}$. Nesterov enters the scaling regime slightly earlier but reaches its lower noise-dominated regime much later.
 
-The representative total-loss curve is shown in [Key Numerical Results](#key-numerical-results). The momentum-gap sweep below verifies the transition-time dependence.
-
-<p align="center">
-  <a href="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.pdf"><img src="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.png" alt="Derivative-detected transition versus momentum gap" width="650"></a>
-</p>
+The total-loss curve and momentum-gap sweep are collected in [Key Numerical Results](#key-numerical-results).
 
 ### 4. Data scaling in three batch-size regimes
 
@@ -293,10 +305,6 @@ The representative saved run uses $(s,\beta)=(0.3,4)$ and $D\in\{2000,4000,\ldot
 | Ultra-large, $B\asymp D^{0.8}$ | 0.0600 / 0.0616 | 0.1170 / 0.1140 | 0.1170 / 0.1152 |
 
 The regime ordering is therefore observed directly: all methods share the same exponent for small batches; Nesterov is fastest in the large-batch regime; and Polyak and Nesterov recover the same asymptotic exponent once the batch is beyond the Polyak critical range.
-
-| Small batch | Large batch | Ultra-large batch |
-|---|---|---|
-| <a href="new_scaling/nag_acc_three_phases/s0.3beta4/small_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/small_batch.png" alt="Small-batch data scaling" width="280"></a> | <a href="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="280"></a> | <a href="new_scaling/nag_acc_three_phases/s0.3beta4/super_large_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/super_large_batch.png" alt="Ultra-large-batch data scaling" width="280"></a> |
 
 Additional saved sweeps cover $(s,\beta)=(0.1,4),(0.3,2),(0.3,6),(0.8,4)$ under `new_scaling/nag_acc_three_phases/`.
 
@@ -311,10 +319,6 @@ At fixed $D=2^{14}$, the experiment searches theory-scaled learning-rate and mom
 | Nesterov | 45 | 0.02210 |
 
 Nesterov both shifts the best batch size upward and reduces the best observed loss: its minimum is 36.0% below the best SGD loss in this grid. The full archive contains 16 $(s,\beta)$ settings, each with an `optimal_loss.csv` and matching PNG/PDF figure.
-
-| Critical batch-size sweep | Increasing-momentum diagnostic |
-|---|---|
-| <a href="new_scaling/cbs/s_0.3_beta_4/cbs.pdf"><img src="new_scaling/cbs/s_0.3_beta_4/cbs.png" alt="Fixed-budget critical batch-size sweep" width="430"></a> | <a href="new_scaling/blowup/blowup_time.pdf"><img src="new_scaling/blowup/blowup_time.png" alt="Loss under an increasingly aggressive momentum schedule" width="430"></a> |
 
 The final diagnostic uses $\rho_k=1-1/(k+1)$ with $(s,\beta)=(0.75,2)$, $B=32$, and $\eta=0.05$. Polyak eventually becomes unstable, whereas Nesterov remains stable over the saved 500,000-step horizon and reaches a much lower loss before its late upturn.
 
