@@ -4,7 +4,7 @@
   <a href="#introduction">📖 Introduction</a> •
   <a href="#main-results">📊 Main Results</a> •
   <a href="#experiments">🧪 Experiments</a> •
-  <a href="#additional-experiments">🔬 Additional Results</a> •
+  <a href="#additional-experiments">🔬 Paper-Scale Results</a> •
   <a href="#getting-started">🚀 Getting Started</a> •
   <a href="#citation">📚 Citation</a>
 </p>
@@ -119,19 +119,35 @@ In the presence of label noise:
 
 ### Key Numerical Results
 
-The numerical section is organized around the same three experiment types used by the code: stability, scaling law, and data scaling. The stability scan shows the different batch-size dependence of Polyak and Nesterov stability boundaries; the long-time scaling-law run verifies the predicted signal-to-noise transition; and the data-scaling run highlights Nesterov's faster large-batch decay.
+The numerical evidence follows the theory in three steps:
 
-| Stability boundary | Scaling-law loss curve | Data Scaling |
-|---|---|---|
-| <a href="assets/figures/beta1_5s2_plot.pdf"><img src="assets/figures/beta1_5s2_plot.png" alt="Stability boundary without background fills" width="300" height="240"></a> | <a href="assets/figures/scaling_law.pdf"><img src="assets/figures/scaling_law.png" alt="Scaling-law loss curve" width="300" height="240"></a> | <img src="assets/figures/nesterov_scaling.png" alt="Data Scaling" width="300" height="240"> |
+1. Stability scans recover the different dependence on $B$ and $1-\rho$.
+2. Long-time runs recover the transient-to-scaling transition and the distinct Polyak and Nesterov noise floors across six $(s,\beta)$ settings.
+3. Data-budget runs recover the predicted small-, large-, and ultra-large-batch exponents, while a fixed-$D$ sweep shows the shift in the best batch size.
 
-The left panel keeps the original algorithm colors without background region fills and links to `assets/figures/beta1_5s2_plot.pdf`; its legend contains only the three prediction curves, while marker shapes identify the empirical boundaries. The middle panel links to `assets/figures/scaling_law.pdf` and compares simulated long-time loss curves with the fitted scaling-law prediction.
+#### Scaling-law fits across six PLK settings
+
+The $2\times3$ sweep uses $s\in\{0.3,0.5\}$ and $\beta\in\{2,4,6\}$. Pale curves show the empirical population loss and solid curves show the fitted theoretical total. The time dependence of the transient, signal, and noise terms is fixed by theory; only nonnegative $O(1)$ coefficients are fitted.
+
+<p align="center">
+  <a href="new_scaling/scaling%20law/scaling_law/scaling_law_fits_2x3.pdf"><img src="new_scaling/scaling%20law/scaling_law/scaling_law_fits_2x3.png" alt="Scaling-law fits across six source and capacity exponent pairs" width="850"></a>
+</p>
+
+The fits track both the oscillatory transient and the algebraic regime. For $s=0.5$, the late-time curves also expose Nesterov's lower noise floor increasingly clearly as $\beta$ grows.
+
+#### Representative long-time and data-scaling results
+
+| Long-time loss scaling | Large-batch data scaling |
+|---|---|
+| <a href="new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.pdf"><img src="new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.png" alt="Empirical long-time loss and scaling-law predictions" width="430"></a> | <a href="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="430"></a> |
+
+In the representative large-batch run at $(s,\beta)=(0.3,4)$, the theoretical/measured decay exponents are $0.1772/0.1787$ for SGD, $0.2308/0.2321$ for Polyak, and $0.3039/0.3074$ for Nesterov. The full small-, large-, and ultra-large-batch comparison is summarized below.
 
 <a id="experiments"></a>
 
 ## 🧪 Experiments
 
-The maintained command-line interface is organized around the three core experimental components of the project. Each component has its own source file and a directly runnable CLI entry point. The newer research notebooks and their saved outputs are catalogued separately in [Additional Experiments and Saved Results](#additional-experiments).
+The maintained command-line interface is organized around the three core experimental components of the project. Each component has its own source file and a directly runnable CLI entry point. The full research sweeps and their saved outputs are catalogued separately in [Paper-Scale Experiments and Saved Results](#additional-experiments).
 
 | Experiment | Source file | CLI command | Main outputs |
 |---|---|---|---|
@@ -181,7 +197,7 @@ C_T
 +C_N\frac{\sigma^2}{B}\min\{\eta_\rho,\eta_\rho^{1/\beta}\}.
 $$
 
-The constants $C_T,C_S,C_N\ge0$ are fitted only to restore unspecified $O(1)$ factors in the asymptotic theory. The optional notebook `scaling_law/scaling_law.ipynb` contains the same long-time idea plus larger grid utilities for exploratory runs.
+The constants $C_T,C_S,C_N\ge0$ are fitted only to restore unspecified $O(1)$ factors in the asymptotic theory. The six-setting paper-scale sweep is in `new_scaling/scaling law/scaling_law_fitting_experiments.ipynb`; the transition analysis and long-time figure are in `new_scaling/scaling law/momentum_three_phase_transitions.ipynb`.
 
 ### 3. Data-scaling experiment
 
@@ -208,17 +224,17 @@ The `quick` preset is a smoke test for correctness and device setup. For quantit
 
 <a id="additional-experiments"></a>
 
-## 🔬 Additional Experiments and Saved Results
+## 🔬 Paper-Scale Experiments and Saved Results
 
-The `new_scaling/` archive contains the newly added research experiments. The summary below is read from the saved JSON, CSV, NPZ, notebook outputs, and figures; none of these experiments needs to be rerun to inspect the reported results.
+The `new_scaling/` archive contains the full research sweeps behind the main numerical claims. The summary below is read from saved JSON, CSV, NPZ, notebook outputs, and figures; the runs do not need to be repeated to inspect the reported results.
 
 ### Experiment map
 
 | Question | Experiment | Saved result |
 |---|---|---|
 | How does stability change with the momentum gap $1-\rho$ at fixed batch size? | `new_scaling/new_stability.ipynb` | [`new_stability_summary.json`](new_scaling/new_stability_summary.json), [`new_stability.pdf`](new_scaling/new_stability.pdf) |
-| Do the corrected Polyak and Nesterov scaling laws fit across different source/capacity exponents? | `new_scaling/scaling law/scaling_law_fitting_experiments.ipynb` | [`scaling_law_fits_2x3.pdf`](new_scaling/scaling%20law/scaling_law/scaling_law_fits_2x3.pdf) and six per-setting NPZ files |
-| Where are the transient-to-scaling and scaling-to-noise transitions? | `new_scaling/scaling law/momentum_three_phase_transitions.ipynb` | [`total_loss_experiment_vs_theory.pdf`](new_scaling/scaling%20law/results/new_scaling/total_loss_experiment_vs_theory.pdf), [`derivative_transition_vs_one_minus_rho.pdf`](new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.pdf) |
+| Do the Polyak and Nesterov scaling laws fit across different source/capacity exponents? | `new_scaling/scaling law/scaling_law_fitting_experiments.ipynb` | [`scaling_law_fits_2x3.pdf`](new_scaling/scaling%20law/scaling_law/scaling_law_fits_2x3.pdf) and six per-setting NPZ files |
+| Where are the transient-to-scaling and scaling-to-noise transitions? | `new_scaling/scaling law/momentum_three_phase_transitions.ipynb` | [`total_loss_experiment_vs_theory.pdf`](new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.pdf), [`derivative_transition_vs_one_minus_rho.pdf`](new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.pdf) |
 | How do data-scaling rates change across small, large, and ultra-large batches? | `new_scaling/nag_acc_three_phases.ipynb` | `new_scaling/nag_acc_three_phases/s*/{small,large,super_large}_batch.{png,pdf}` |
 | Where is the best batch size under a fixed data budget? | `new_scaling/cbs.ipynb`, `new_scaling/cbs.py` | `new_scaling/cbs/s_*_beta_*/optimal_loss.csv` and `cbs.{png,pdf}` |
 | What happens under an increasingly aggressive momentum schedule? | `new_scaling/blow_up.py` | [`blowup_time.pdf`](new_scaling/blowup/blowup_time.pdf) |
@@ -243,15 +259,11 @@ Both momentum boundaries have the predicted unit log-log slope before saturation
 
 The notebook is cache-aware: its editable defaults currently show $(\beta,s,B)=(2,3,32)$, but the saved summary and PDF above describe the embedded cache configuration reported in this table.
 
-### 2. Corrected scaling-law fits across six PLK settings
+### 2. Scaling-law fits across six PLK settings
 
-The $2\times3$ sweep uses $s\in\{0.3,0.5\}$ and $\beta\in\{2,4,6\}$ with $B=64$, $\eta=0.06$, $1-\rho=0.03$, $\sigma=0.2$, dimension 4096, 100 replicas, and 500,000 steps. It fits nonnegative coefficients to the corrected theoretical shapes while leaving their time dependence fixed.
+The $2\times3$ sweep uses $s\in\{0.3,0.5\}$ and $\beta\in\{2,4,6\}$ with $B=64$, $\eta=0.06$, $1-\rho=0.03$, $\sigma=0.2$, dimension 4096, 100 replicas, and 500,000 steps. It fits nonnegative coefficients to the theoretical term shapes while leaving their time dependence fixed.
 
-<p align="center">
-  <a href="new_scaling/scaling%20law/scaling_law/scaling_law_fits_2x3.pdf"><img src="new_scaling/scaling%20law/scaling_law/scaling_law_fits_2x3.png" alt="Corrected scaling-law fits across six source and capacity exponent pairs" width="850"></a>
-</p>
-
-Across all six settings, the fitted totals track the empirical curves through the oscillatory transient and the algebraic scaling regime. The lower Nesterov noise floor is most visible for $s=0.5$ and larger $\beta$, matching the predicted clipping term $\min\{\eta_\rho,\eta_\rho^{1/\beta}\}$.
+The combined figure is shown in [Key Numerical Results](#key-numerical-results), and the archive also includes a PNG, PDF, and NPZ file for each setting. Across all six settings, the fitted totals track the empirical curves through the oscillatory transient and the algebraic scaling regime. The lower Nesterov noise floor is most visible for $s=0.5$ and larger $\beta$, matching the predicted clipping term $\min\{\eta_\rho,\eta_\rho^{1/\beta}\}$.
 
 ### 3. Three time-domain phases
 
@@ -264,9 +276,11 @@ The long run at $(s,\beta)=(0.5,4)$ uses $B=64$, $\eta=0.06$, $1-\rho=0.03$, $\s
 
 The slopes are close to $-1$, so the first transition scales approximately as $k_{\rm tr}\propto(1-\rho)^{-1}$. Nesterov enters the scaling regime slightly earlier but reaches its lower noise-dominated regime much later.
 
-| Empirical total and fitted prediction | Transition scaling with $1-\rho$ |
-|---|---|
-| <a href="new_scaling/scaling%20law/results/new_scaling/total_loss_experiment_vs_theory.pdf"><img src="new_scaling/scaling%20law/results/new_scaling/total_loss_experiment_vs_theory.png" alt="Empirical loss and fitted scaling-law total" width="430"></a> | <a href="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.pdf"><img src="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.png" alt="Derivative-detected transition versus momentum gap" width="430"></a> |
+The representative total-loss curve is shown in [Key Numerical Results](#key-numerical-results). The momentum-gap sweep below verifies the transition-time dependence.
+
+<p align="center">
+  <a href="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.pdf"><img src="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.png" alt="Derivative-detected transition versus momentum gap" width="650"></a>
+</p>
 
 ### 4. Data scaling in three batch-size regimes
 
@@ -315,11 +329,9 @@ The final diagnostic uses $\rho_k=1-1/(k+1)$ with $(s,\beta)=(0.75,2)$, $B=32$, 
 ├── README.md
 ├── pyproject.toml              # Editable installation and CLI entry point
 ├── requirements.txt
-├── scaling_law/
-│   └── scaling_law.ipynb       # Optional exploratory notebook for long-time curves
-├── new_scaling/                # Additional notebooks, scripts, and saved experiment results
+├── new_scaling/                # Paper-scale notebooks, scripts, and saved experiment results
 │   ├── new_stability.ipynb      # Stability versus the momentum gap
-│   ├── scaling law/             # Corrected fits and time-domain transitions
+│   ├── scaling law/             # Scaling-law fits and time-domain transitions
 │   ├── nag_acc_three_phases/    # Three batch-regime data-scaling figures
 │   ├── cbs/                     # Fixed-budget batch sweeps and CSV summaries
 │   └── blowup/                  # Increasing-momentum stability diagnostic
@@ -336,7 +348,7 @@ The final diagnostic uses $\rho_k=1-1/(k+1)$ with $(s,\beta)=(0.75,2)$, $B=32$, 
 └── results/                    # New runtime outputs, excluded from version control
 ```
 
-Exploratory notebooks, duplicated CPU/GPU implementations, caches, and generated files remain outside `src/`. The three maintained runnable components live in separate package files, selected paper-quality figures are stored under `assets/figures/`, and `new_scaling/` preserves the additional research notebooks together with their saved outputs.
+Exploratory notebooks, duplicated CPU/GPU implementations, caches, and generated files remain outside `src/`. The three maintained runnable components live in separate package files, selected paper-quality figures are stored under `assets/figures/`, and `new_scaling/` preserves the paper-scale notebooks together with their saved outputs.
 
 ### Installation
 
