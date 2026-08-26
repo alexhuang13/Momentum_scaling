@@ -4,7 +4,6 @@
   <a href="#introduction">📖 Introduction</a> •
   <a href="#main-results">📊 Main Results</a> •
   <a href="#experiments">🧪 Experiments</a> •
-  <a href="#additional-experiments">🔬 Paper-Scale Results</a> •
   <a href="#getting-started">🚀 Getting Started</a> •
   <a href="#citation">📚 Citation</a>
 </p>
@@ -163,7 +162,7 @@ At fixed $D=2^{14}$, Nesterov attains the lowest loss and shifts the best batch 
 
 ## 🧪 Experiments
 
-The maintained command-line interface is organized around the three core experimental components of the project. Each component has its own source file and a directly runnable CLI entry point. The full research sweeps and their saved outputs are catalogued separately in [Paper-Scale Experiments and Saved Results](#additional-experiments).
+The maintained command-line interface is organized around the three core experimental components of the project. Each component has its own source file and a directly runnable CLI entry point. Paper-scale notebooks and saved outputs live under `new_scaling/`.
 
 | Experiment | Source file | CLI command | Main outputs |
 |---|---|---|---|
@@ -237,90 +236,6 @@ momentum-scaling all --preset quick --device auto --output-dir results/quick
 ```
 
 The `quick` preset is a smoke test for correctness and device setup. For quantitative claims, use the `paper` preset and enough repetitions for the relevant experiment.
-
-<a id="additional-experiments"></a>
-
-## 🔬 Paper-Scale Experiments and Saved Results
-
-The `new_scaling/` archive contains the full research sweeps behind the main numerical claims. The summary below is read from saved JSON, CSV, NPZ, notebook outputs, and figures; the runs do not need to be repeated to inspect the reported results.
-
-### Experiment map
-
-| Question | Experiment | Saved result |
-|---|---|---|
-| How does stability change with the momentum gap $1-\rho$ at fixed batch size? | `new_scaling/new_stability.ipynb` | [`new_stability_summary.json`](new_scaling/new_stability_summary.json), [`new_stability.pdf`](new_scaling/new_stability.pdf) |
-| Do the Polyak and Nesterov scaling laws fit across different source/capacity exponents? | `new_scaling/scaling law/scaling_law_fitting_experiments.ipynb` | [`scaling_law_fits_2x3.pdf`](new_scaling/scaling%20law/scaling_law/scaling_law_fits_2x3.pdf) and six per-setting NPZ files |
-| Where are the transient-to-scaling and scaling-to-noise transitions? | `new_scaling/scaling law/momentum_three_phase_transitions.ipynb` | [`total_loss_experiment_vs_theory.pdf`](new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.pdf), [`derivative_transition_vs_one_minus_rho.pdf`](new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.pdf) |
-| How do data-scaling rates change across small, large, and ultra-large batches? | `new_scaling/nag_acc_three_phases.ipynb` | `new_scaling/nag_acc_three_phases/s*/{small,large,super_large}_batch.{png,pdf}` |
-| Where is the best batch size under a fixed data budget? | `new_scaling/cbs.ipynb`, `new_scaling/cbs.py` | `new_scaling/cbs/s_*_beta_*/optimal_loss.csv` and `cbs.{png,pdf}` |
-| What happens under an increasingly aggressive momentum schedule? | `new_scaling/blow_up.py` | [`blowup_time.pdf`](new_scaling/blowup/blowup_time.pdf) |
-
-### 1. Stability versus the momentum gap
-
-This experiment fixes $B$ and scans $g=1-\rho$. The saved paper-run cache uses $(\beta,s)=(1.5,0.3)$, $B=16$, dimension 4096, no label noise, 2000 steps, and five seeds. Polyak and Nesterov are fit to
-
-$$
-\eta^{\rm crit}=\min\{L,c(1-\rho)\},
-$$
-
-while SGD is fit to a constant level.
-
-| Method | Rising coefficient $c$ | Momentum-gap breakpoint | Stability ceiling $L$ |
-|---|---:|---:|---:|
-| SGD | — | — | 1.4809 |
-| Polyak | 11.0724 | 0.05506 | 0.6096 |
-| Nesterov | 53.6998 | 0.01447 | 0.7771 |
-
-Both momentum boundaries have the predicted unit log-log slope before saturation. Nesterov's fitted rising coefficient is $4.85\times$ Polyak's and it reaches its ceiling at a $3.80\times$ smaller momentum gap, consistent with the stronger $B^\beta(1-\rho)$ stability scaling.
-
-The notebook is cache-aware: its editable defaults currently show $(\beta,s,B)=(2,3,32)$, but the saved summary and PDF above describe the embedded cache configuration reported in this table.
-
-### 2. Scaling-law fits across six PLK settings
-
-The $2\times3$ sweep uses $s\in\{0.3,0.5\}$ and $\beta\in\{2,4,6\}$ with $B=64$, $\eta=0.06$, $1-\rho=0.03$, $\sigma=0.2$, dimension 4096, 100 replicas, and 500,000 steps. It fits nonnegative coefficients to the theoretical term shapes while leaving their time dependence fixed.
-
-The combined figure is shown in [Key Numerical Results](#key-numerical-results), and the archive also includes a PNG, PDF, and NPZ file for each setting. Across all six settings, the fitted totals track the empirical curves through the oscillatory transient and the algebraic scaling regime. The lower Nesterov noise floor is most visible for $s=0.5$ and larger $\beta$, matching the predicted clipping term $\min\{\eta_\rho,\eta_\rho^{1/\beta}\}$.
-
-### 3. Three time-domain phases
-
-The long run at $(s,\beta)=(0.5,4)$ uses $B=64$, $\eta=0.06$, $1-\rho=0.03$, $\sigma=0.2$, 100 replicas, and 20 million steps. The first transition is detected from the strongest early change in $d\log\widehat L/d\log k$; the second is the point where the fitted noise floor reaches 70% of the fitted late-time total.
-
-| Method | Phase $1\to2$ step | Phase $2\to3$ step | Small-gap slope of $k_{\rm tr}$ vs. $1-\rho$ |
-|---|---:|---:|---:|
-| Polyak | 149 | $6.77\times10^5$ | -0.932 |
-| Nesterov | 110 | $4.19\times10^6$ | -1.040 |
-
-The slopes are close to $-1$, so the first transition scales approximately as $k_{\rm tr}\propto(1-\rho)^{-1}$. Nesterov enters the scaling regime slightly earlier but reaches its lower noise-dominated regime much later.
-
-The total-loss curve and momentum-gap sweep are collected in [Key Numerical Results](#key-numerical-results).
-
-### 4. Data scaling in three batch-size regimes
-
-The representative saved run uses $(s,\beta)=(0.3,4)$ and $D\in\{2000,4000,\ldots,128000\}$. Every point averages 100 trajectories and reports the mean population excess loss over the final 1% of steps. The measured decay exponents closely match all nine predictions.
-
-| Batch regime | SGD: theory / measured | Polyak: theory / measured | Nesterov: theory / measured |
-|---|---:|---:|---:|
-| Small, $B\asymp D^0$ | 0.2308 / 0.2317 | 0.2308 / 0.2299 | 0.2308 / 0.2304 |
-| Large, $B\asymp D^{0.4095}$ | 0.1772 / 0.1787 | 0.2308 / 0.2321 | 0.3039 / 0.3074 |
-| Ultra-large, $B\asymp D^{0.8}$ | 0.0600 / 0.0616 | 0.1170 / 0.1140 | 0.1170 / 0.1152 |
-
-The regime ordering is therefore observed directly: all methods share the same exponent for small batches; Nesterov is fastest in the large-batch regime; and Polyak and Nesterov recover the same asymptotic exponent once the batch is beyond the Polyak critical range.
-
-Additional saved sweeps cover $(s,\beta)=(0.1,4),(0.3,2),(0.3,6),(0.8,4)$ under `new_scaling/nag_acc_three_phases/`.
-
-### 5. Fixed-budget critical batch-size sweep
-
-At fixed $D=2^{14}$, the experiment searches theory-scaled learning-rate and momentum-gap multipliers for each batch size. For the representative $(s,\beta)=(0.3,4)$ result, the empirical minima are:
-
-| Method | Best batch size in the saved grid | Minimum loss |
-|---|---:|---:|
-| SGD | 4 | 0.03452 |
-| Polyak | 23 | 0.03333 |
-| Nesterov | 45 | 0.02210 |
-
-Nesterov both shifts the best batch size upward and reduces the best observed loss: its minimum is 36.0% below the best SGD loss in this grid. The full archive contains 16 $(s,\beta)$ settings, each with an `optimal_loss.csv` and matching PNG/PDF figure.
-
-The final diagnostic uses $\rho_k=1-1/(k+1)$ with $(s,\beta)=(0.75,2)$, $B=32$, and $\eta=0.05$. Polyak eventually becomes unstable, whereas Nesterov remains stable over the saved 500,000-step horizon and reaches a much lower loss before its late upturn.
 
 <a id="getting-started"></a>
 
