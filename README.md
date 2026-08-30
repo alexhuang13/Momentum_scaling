@@ -162,7 +162,24 @@ At fixed $D=2^{14}$, Nesterov attains the lowest loss and shifts the best batch 
 
 ## 🧪 Experiments
 
-The maintained command-line interface is organized around the three core experimental components of the project. Each component has its own source file and a directly runnable CLI entry point. Paper-scale notebooks and saved outputs live under `new_scaling/`.
+The notebooks under `new_scaling/` are the primary interactive entry points for the paper experiments. Start Jupyter from the repository root so that relative output paths resolve under `results/` as documented.
+
+### Notebook workflow (recommended)
+
+| Question | Notebook | Main sweep |
+|---|---|---|
+| How does the stability boundary depend on batch size? | [`new_scaling/stability_batch_size_gpu.ipynb`](new_scaling/stability_batch_size_gpu.ipynb) | $B$ and $\eta$, with $1-\rho=2^{-24}$ fixed |
+| How does the stability boundary depend on momentum? | [`new_scaling/stability_momentum_gap.ipynb`](new_scaling/stability_momentum_gap.ipynb) | $1-\rho$ and $\eta$, with $B=32$ fixed |
+| How well do the time-domain scaling laws fit? | [`new_scaling/scaling law/scaling_law_fitting_experiments.ipynb`](new_scaling/scaling%20law/scaling_law_fitting_experiments.ipynb) | Six $(s,\beta)$ settings |
+| When does the transient-to-scaling transition occur? | [`new_scaling/scaling law/momentum_three_phase_transitions.ipynb`](new_scaling/scaling%20law/momentum_three_phase_transitions.ipynb) | Training time and $1-\rho$ |
+| What are the three data-scaling regimes? | [`new_scaling/nag_acc_three_phases.ipynb`](new_scaling/nag_acc_three_phases.ipynb) | Data budget across batch regimes |
+| Which batch size is best at fixed data budget? | [`new_scaling/cbs.ipynb`](new_scaling/cbs.ipynb) | $B$ at fixed $D=2^{14}$ |
+
+The two stability notebooks are intentionally separate. Use `stability_batch_size_gpu.ipynb` for a plot with $B$ on the horizontal axis; use `stability_momentum_gap.ipynb` for a plot with $1-\rho$ on the horizontal axis. Both compare SGD, Polyak heavy-ball, and Nesterov momentum.
+
+### Command-line workflow
+
+The package CLI provides smaller smoke tests and automation-friendly versions of the three core components:
 
 | Experiment | Source file | CLI command | Main outputs |
 |---|---|---|---|
@@ -172,9 +189,13 @@ The maintained command-line interface is organized around the three core experim
 
 Shared model construction, optimizers, device selection, and stochastic-gradient utilities live in `src/momentum_scaling/core.py`. Plotting is kept separate in `src/momentum_scaling/plotting.py`, and `src/momentum_scaling/cli.py` only dispatches commands.
 
-### 1. Stability experiment
+### 1. Stability experiments
 
-This experiment scans the largest stable learning rate as a function of batch size. It uses fresh Gaussian mini-batches and compares SGD, Polyak momentum, and Nesterov momentum.
+For the paper-scale batch-size scan, open [`new_scaling/stability_batch_size_gpu.ipynb`](new_scaling/stability_batch_size_gpu.ipynb) and run its cells from top to bottom. The default configuration uses double precision, selects CUDA when available, sweeps $B=2^0,\ldots,2^{12}$ and 50 learning rates, and averages the boundary over five seeds. Its cache and figure are written under `results/stability_batch_size/`.
+
+For the complementary momentum-gap scan at fixed $B=32$, run [`new_scaling/stability_momentum_gap.ipynb`](new_scaling/stability_momentum_gap.ipynb). Set `PAPER_RUN=False` in its configuration cell for a short smoke test. Its outputs are written under `results/stability_momentum_gap/`.
+
+The CLI below is an automation-friendly batch-size stability scan:
 
 ```bash
 momentum-scaling stability --preset quick --device auto --output-dir results/stability
@@ -249,7 +270,13 @@ The `quick` preset is a smoke test for correctness and device setup. For quantit
 ├── pyproject.toml              # Editable installation and CLI entry point
 ├── requirements.txt
 ├── new_scaling/                # Paper-scale notebooks, scripts, and saved experiment results
-│   ├── new_stability.ipynb      # Stability versus the momentum gap
+│   ├── stability_batch_size_gpu.ipynb
+│   │                              # Stability versus batch size B
+│   ├── stability_momentum_gap.ipynb
+│   │                              # Stability versus momentum gap 1-rho
+│   ├── cbs.ipynb                 # Best batch size at a fixed data budget
+│   ├── nag_acc_three_phases.ipynb
+│   │                              # Small-, large-, and ultra-large-batch regimes
 │   ├── scaling law/             # Scaling-law fits and time-domain transitions
 │   ├── nag_acc_three_phases/    # Three batch-regime data-scaling figures
 │   ├── cbs/                     # Fixed-budget batch sweeps and CSV summaries
@@ -267,7 +294,7 @@ The `quick` preset is a smoke test for correctness and device setup. For quantit
 └── results/                    # New runtime outputs, excluded from version control
 ```
 
-Exploratory notebooks, duplicated CPU/GPU implementations, caches, and generated files remain outside `src/`. The three maintained runnable components live in separate package files, selected paper-quality figures are stored under `assets/figures/`, and `new_scaling/` preserves the paper-scale notebooks together with their saved outputs.
+Paper-scale notebooks are consolidated under `new_scaling/`; the two stability filenames state which variable is swept. Reusable package code lives under `src/`, selected paper-quality figures are stored under `assets/figures/`, and new caches and generated outputs belong under the ignored `results/` directory.
 
 ### Installation
 
@@ -281,6 +308,13 @@ python -m pip install -e .
 ```
 
 `requirements.txt` contains only NumPy, PyTorch, and Matplotlib. For NVIDIA GPUs, first install the PyTorch build that matches the local CUDA version, then run `python -m pip install -e .`.
+
+Jupyter is kept as an optional interactive dependency. If it is not already available in the environment, install and launch it from the repository root:
+
+```bash
+python -m pip install jupyterlab
+jupyter lab
+```
 
 Verify the installation with:
 
