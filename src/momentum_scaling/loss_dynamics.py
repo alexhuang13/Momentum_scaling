@@ -1,8 +1,8 @@
-"""Long-time scaling-law experiments for Polyak and Nesterov momentum.
+"""Long-time loss dynamics for Polyak and Nesterov momentum.
 
 This module fixes optimizer hyperparameters and extends training time to show
 how the excess loss moves from signal-dominated decay to a noise-dominated
-plateau.  It is the command-line counterpart of ``scaling_law/scaling_law.ipynb``.
+plateau. It backs the notebooks under ``experiments/loss_dynamics``.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from .core import Problem, build_problem, excess_loss, lookahead, update
 
 
 @dataclass(frozen=True)
-class ScalingLawRuntime:
+class LossDynamicsRuntime:
     device: torch.device
     dtype: torch.dtype
     seed: int
@@ -32,7 +32,7 @@ DEFAULT_SETTINGS = {
 }
 
 
-def _environment(runtime: ScalingLawRuntime) -> dict[str, str | int]:
+def _environment(runtime: LossDynamicsRuntime) -> dict[str, str | int]:
     return {
         "python": platform.python_version(),
         "numpy": np.__version__,
@@ -87,7 +87,9 @@ def simulate_long_time_curve(
     for k in range(1, steps + 1):
         evaluation = lookahead(delta, previous, algorithm, rho)
         current_loss = excess_loss(evaluation, problem.lam)
-        scale = ((current_loss + problem.sigma**2) / float(batch_size)).sqrt().unsqueeze(-1)
+        scale = (
+            ((current_loss + problem.sigma**2) / float(batch_size)).sqrt().unsqueeze(-1)
+        )
         noise = torch.randn(
             evaluation.shape,
             device=evaluation.device,
@@ -95,7 +97,9 @@ def simulate_long_time_curve(
             generator=generator,
         )
         gradient = evaluation * problem.lam + noise * problem.lam.sqrt() * scale
-        new_delta = update(delta, previous, gradient, algorithm=algorithm, eta=eta, rho=rho)
+        new_delta = update(
+            delta, previous, gradient, algorithm=algorithm, eta=eta, rho=rho
+        )
         previous, delta = delta, new_delta
 
         if k in checkpoint_set:
@@ -127,10 +131,14 @@ def theory_matrix(
     elif algorithm == "nesterov":
         r_nes = 4.0 * rho**2 / (1.0 + rho) ** 2
         transient = ((1.0 - rho) ** 2 / eta) ** (s + 1.0 / beta) * r_nes**k
-        noise_floor = sigma**2 / float(batch_size) * min(eta_rho, eta_rho ** (1.0 / beta))
+        noise_floor = (
+            sigma**2 / float(batch_size) * min(eta_rho, eta_rho ** (1.0 / beta))
+        )
         noise = np.full_like(k, noise_floor)
     else:
-        raise ValueError(f"Scaling-law curves are defined for Polyak/Nesterov, got {algorithm}.")
+        raise ValueError(
+            f"Scaling-law curves are defined for Polyak/Nesterov, got {algorithm}."
+        )
 
     return np.column_stack([transient, signal, noise])
 
@@ -210,7 +218,7 @@ def _config(quick: bool) -> dict:
     }
 
 
-def scaling_law_experiment(runtime: ScalingLawRuntime, *, quick: bool) -> dict:
+def loss_dynamics_experiment(runtime: LossDynamicsRuntime, *, quick: bool) -> dict:
     """Run directly executable long-time scaling-law experiments."""
     config = _config(quick)
     problem = build_problem(
@@ -226,7 +234,7 @@ def scaling_law_experiment(runtime: ScalingLawRuntime, *, quick: bool) -> dict:
 
     for index, algorithm in enumerate(("polyak", "nesterov")):
         q = config["settings"][algorithm]
-        print(f"[scaling-law] {algorithm.capitalize()}", flush=True)
+        print(f"[loss-dynamics] {algorithm.capitalize()}", flush=True)
         steps, empirical = simulate_long_time_curve(
             problem,
             algorithm=algorithm,
@@ -270,7 +278,7 @@ def scaling_law_experiment(runtime: ScalingLawRuntime, *, quick: bool) -> dict:
             },
         }
         np.savez_compressed(
-            runtime.output_dir / f"scaling_law_{algorithm}.npz",
+            runtime.output_dir / f"loss_dynamics_{algorithm}.npz",
             steps=steps,
             empirical_loss=empirical,
             theory_prediction=prediction,
@@ -283,11 +291,11 @@ def scaling_law_experiment(runtime: ScalingLawRuntime, *, quick: bool) -> dict:
         print(f"  final loss={empirical[-1]:.6e}", flush=True)
 
     payload = {
-        "experiment": "scaling_law",
+        "experiment": "loss_dynamics",
         "preset": "quick" if quick else "paper",
         "environment": _environment(runtime),
         "config": config,
         "results": results,
     }
-    _save_json(runtime.output_dir / "scaling_law.json", payload)
+    _save_json(runtime.output_dir / "loss_dynamics.json", payload)
     return payload

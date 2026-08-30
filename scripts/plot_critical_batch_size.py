@@ -22,7 +22,8 @@ D_FIXED = 2**14
 S_VALUE = 0.3
 BETA = 4.0
 
-DEFAULT_DATA_DIR = Path.cwd() / "cbs" / "s_0.3_beta_4"
+DEFAULT_DATA_DIR = Path("paper_artifacts/scaling/critical_batch_size/s_0.3_beta_4")
+DEFAULT_OUTPUT_DIR = Path("results/figures/critical_batch_size")
 CSV_FILENAME = "optimal_loss.csv"
 
 ALGORITHM_ORDER = [
@@ -43,30 +44,31 @@ COLORS = {
     "Nesterov": "C2",
 }
 
-plt.rcParams.update({
-    "text.usetex": False,
-    "font.family": "sans-serif",
-    "axes.titlesize": 16,
-    "axes.labelsize": 16,
-    "lines.linewidth": 2,
-    "lines.markersize": 6,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "figure.figsize": (5, 4),
-    "legend.fontsize": 10,
-    "legend.handlelength": 1,
-})
+plt.rcParams.update(
+    {
+        "text.usetex": False,
+        "font.family": "sans-serif",
+        "axes.titlesize": 16,
+        "axes.labelsize": 16,
+        "lines.linewidth": 2,
+        "lines.markersize": 6,
+        "xtick.labelsize": 12,
+        "ytick.labelsize": 12,
+        "figure.figsize": (5, 4),
+        "legend.fontsize": 10,
+        "legend.handlelength": 1,
+    }
+)
 
 
 # =============================================================================
 # 2. Read the saved optimal losses
 # =============================================================================
 
+
 def load_optimal_losses(csv_path: Path) -> pd.DataFrame:
     if not csv_path.is_file():
-        raise FileNotFoundError(
-            f"Could not find the saved loss CSV: {csv_path}"
-        )
+        raise FileNotFoundError(f"Could not find the saved loss CSV: {csv_path}")
 
     loss_df = pd.read_csv(csv_path)
 
@@ -76,15 +78,12 @@ def load_optimal_losses(csv_path: Path) -> pd.DataFrame:
     ]
 
     missing_columns = [
-        column
-        for column in required_columns
-        if column not in loss_df.columns
+        column for column in required_columns if column not in loss_df.columns
     ]
 
     if missing_columns:
         raise ValueError(
-            "The CSV is missing required columns: "
-            + ", ".join(missing_columns)
+            "The CSV is missing required columns: " + ", ".join(missing_columns)
         )
 
     loss_df = loss_df[required_columns].copy()
@@ -99,23 +98,18 @@ def load_optimal_losses(csv_path: Path) -> pd.DataFrame:
         raise ValueError(f"The loss CSV is empty: {csv_path}")
 
     if not np.isfinite(loss_df.to_numpy(dtype=np.float64)).all():
-        raise ValueError(
-            f"The loss CSV contains non-finite values: {csv_path}"
-        )
+        raise ValueError(f"The loss CSV contains non-finite values: {csv_path}")
 
     if (loss_df["B"] <= 0).any():
         raise ValueError("Every batch size B must be positive.")
 
-    return (
-        loss_df
-        .sort_values("B")
-        .reset_index(drop=True)
-    )
+    return loss_df.sort_values("B").reset_index(drop=True)
 
 
 # =============================================================================
 # 3. Plot batch size versus optimal loss
 # =============================================================================
+
 
 def plot_cbs(
     loss_df: pd.DataFrame,
@@ -231,18 +225,12 @@ def plot_cbs(
             "Small-batch",
         ),
         (
-            np.sqrt(
-                b_sgd_critical
-                * ultra_large_boundary
-            ),
+            np.sqrt(b_sgd_critical * ultra_large_boundary),
             0.93,
             "Large-batch",
         ),
         (
-            np.sqrt(
-                ultra_large_boundary
-                * x_max
-            ),
+            np.sqrt(ultra_large_boundary * x_max),
             0.97,
             "Ultra\nlarge-batch",
         ),
@@ -303,6 +291,7 @@ def plot_cbs(
 # 4. Main
 # =============================================================================
 
+
 def main() -> None:
     parser = argparse.ArgumentParser()
 
@@ -312,9 +301,15 @@ def main() -> None:
         default=DEFAULT_DATA_DIR,
         help=(
             "Directory containing optimal_loss.csv. "
-            "The generated cbs.pdf and cbs.png are written "
-            "back to this directory."
+            "This directory is treated as read-only."
         ),
+    )
+
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Directory for the generated cbs.pdf and cbs.png.",
     )
 
     parser.add_argument(
@@ -332,7 +327,7 @@ def main() -> None:
 
     pdf_path, png_path = plot_cbs(
         loss_df=loss_df,
-        output_dir=data_dir,
+        output_dir=args.out_dir.expanduser().resolve(),
         dpi=args.dpi,
     )
 

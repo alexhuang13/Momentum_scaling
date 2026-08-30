@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Render the data-scaling phase diagram."""
 
 from __future__ import annotations
 
@@ -6,6 +7,7 @@ import argparse
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -13,30 +15,31 @@ from matplotlib.lines import Line2D
 
 # =============================================================================
 # Global plotting settings
-# Exactly matched to cbs(1).py
+# Shared visual style for the scaling phase diagram.
 # =============================================================================
 
-plt.rcParams.update({
-    "text.usetex": False,
-    "font.family": "sans-serif",
-    "axes.titlesize": 16,
-    "axes.labelsize": 16,
-    "lines.linewidth": 2,
-    "lines.markersize": 6,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "figure.figsize": (5, 4),
-    "legend.fontsize": 8,
-    "legend.handlelength": 1,
-})
+plt.rcParams.update(
+    {
+        "text.usetex": False,
+        "font.family": "sans-serif",
+        "axes.titlesize": 16,
+        "axes.labelsize": 16,
+        "lines.linewidth": 2,
+        "lines.markersize": 6,
+        "xtick.labelsize": 12,
+        "ytick.labelsize": 12,
+        "figure.figsize": (5, 4),
+        "legend.fontsize": 8,
+        "legend.handlelength": 1,
+    }
+)
 
 
 COLORS = {
     "sgd": "C0",
     "polyak": "C1",
     "nesterov": "C2",
-
-    # EXACTLY the same fill colors as cbs(1).py
+    # Match the critical-batch-size figure colors.
     "blue_fill": "lightskyblue",
     "red_fill": "lightcoral",
     "green_fill": "lightgreen",
@@ -47,6 +50,7 @@ COLORS = {
 # Coordinates
 # =============================================================================
 
+
 def coords(
     s: float,
     beta: float,
@@ -54,34 +58,12 @@ def coords(
 
     y_base = s / (s + 1.0)
 
-    y_peak = (
-        2.0 * s * beta
-        / (
-            2.0 * s * beta
-            + beta
-            + 1.0
-        )
-    )
+    y_peak = 2.0 * s * beta / (2.0 * s * beta + beta + 1.0)
 
     return {
-        "x_s": (
-            s / (s + 1.0)
-        ),
-
-        "x_peak": (
-            (2.0 * s * beta + 1.0)
-            / (
-                2.0 * s * beta
-                + beta
-                + 1.0
-            )
-        ),
-
-        "x_poly_end": (
-            (2.0 * s + 1.0)
-            / (2.0 * s + 2.0)
-        ),
-
+        "x_s": (s / (s + 1.0)),
+        "x_peak": ((2.0 * s * beta + 1.0) / (2.0 * s * beta + beta + 1.0)),
+        "x_poly_end": ((2.0 * s + 1.0) / (2.0 * s + 2.0)),
         "y_base": y_base,
         "y_peak": y_peak,
     }
@@ -89,8 +71,9 @@ def coords(
 
 # =============================================================================
 # Background regions
-# EXACTLY matched to cbs(1).py
+# Match the critical-batch-size figure boundaries.
 # =============================================================================
+
 
 def add_regions(
     ax,
@@ -124,7 +107,7 @@ def add_regions(
         zorder=0,
     )
 
-    # EXACTLY the same dashed boundary style as cbs(1).py
+    # Use the same dashed boundary style as the critical-batch-size figure.
     ax.axvline(
         c["x_s"],
         linestyle="--",
@@ -148,6 +131,7 @@ def add_regions(
 # Region labels
 # =============================================================================
 
+
 def add_region_labels(
     ax,
     c,
@@ -160,18 +144,12 @@ def add_region_labels(
             "Small-batch",
         ),
         (
-            0.5 * (
-                c["x_s"]
-                + c["x_poly_end"]
-            ),
+            0.5 * (c["x_s"] + c["x_poly_end"]),
             0.93,
             "Large-batch",
         ),
         (
-            0.5 * (
-                c["x_poly_end"]
-                + 1.0
-            ),
+            0.5 * (c["x_poly_end"] + 1.0),
             0.97,
             "Ultra\nlarge-batch",
         ),
@@ -191,9 +169,11 @@ def add_region_labels(
             zorder=30,
         )
 
+
 # =============================================================================
 # Theory curves
 # =============================================================================
+
 
 def draw_lines(
     ax,
@@ -296,6 +276,7 @@ def draw_lines(
 # Axes
 # =============================================================================
 
+
 def setup_axes(
     ax,
     c,
@@ -314,24 +295,28 @@ def setup_axes(
     # IMPORTANT:
     # Do NOT hide top/right spines.
     #
-    # cbs(1).py keeps the standard Matplotlib box,
+    # Keep the standard Matplotlib axes box.
     # so all four black spines remain visible.
 
     # -------------------------------------------------------------
     # Transition points
     # -------------------------------------------------------------
 
-    ax.set_xticks([
-        c["x_s"],
-        c["x_peak"],
-        c["x_poly_end"],
-    ])
+    ax.set_xticks(
+        [
+            c["x_s"],
+            c["x_peak"],
+            c["x_poly_end"],
+        ]
+    )
 
-    ax.set_xticklabels([
-        r"$b_1$",
-        r"$b_2$",
-        r"$b_3$",
-    ])
+    ax.set_xticklabels(
+        [
+            r"$b_1$",
+            r"$b_2$",
+            r"$b_3$",
+        ]
+    )
 
     ax.set_yticks([])
 
@@ -366,25 +351,26 @@ def setup_axes(
     # -------------------------------------------------------------
     # Legend
     #
-    # Use the same default framed legend style as cbs(1).py:
+    # Use the same framed legend style as the companion figures.
     # white face, grey border.
     # -------------------------------------------------------------
 
     handles = [
         Line2D(
-            [0], [0],
+            [0],
+            [0],
             color=COLORS["sgd"],
             linewidth=2.6,
         ),
-
         Line2D(
-            [0], [0],
+            [0],
+            [0],
             color=COLORS["polyak"],
             linewidth=2.6,
         ),
-
         Line2D(
-            [0], [0],
+            [0],
+            [0],
             color=COLORS["nesterov"],
             linewidth=2.6,
         ),
@@ -407,6 +393,7 @@ def setup_axes(
 # Standalone legend
 # =============================================================================
 
+
 def make_legend_figure(
     output_dir: Path,
     dpi: int = 300,
@@ -414,17 +401,20 @@ def make_legend_figure(
 
     handles = [
         Line2D(
-            [0], [0],
+            [0],
+            [0],
             color=COLORS["sgd"],
             linewidth=1.5,
         ),
         Line2D(
-            [0], [0],
+            [0],
+            [0],
             color=COLORS["polyak"],
             linewidth=1.5,
         ),
         Line2D(
-            [0], [0],
+            [0],
+            [0],
             color=COLORS["nesterov"],
             linewidth=1.5,
         ),
@@ -484,6 +474,7 @@ def make_legend_figure(
 # Figure
 # =============================================================================
 
+
 def make_figure(
     s: float,
     beta: float,
@@ -501,7 +492,7 @@ def make_figure(
         exist_ok=True,
     )
 
-    # EXACTLY as cbs(1).py
+    # Match the companion figure layout.
     fig, ax = plt.subplots()
 
     add_regions(
@@ -524,7 +515,7 @@ def make_figure(
         c,
     )
 
-    # EXACTLY as cbs(1).py
+    # Match the companion figure style.
     fig.subplots_adjust(
         left=0.18,
         right=0.97,
@@ -532,17 +523,11 @@ def make_figure(
         top=0.96,
     )
 
-    pdf_path = (
-        out_dir
-        / "rate_diagram.pdf"
-    )
+    pdf_path = out_dir / "rate_diagram.pdf"
 
-    png_path = (
-        out_dir
-        / "rate_diagram.png"
-    )
+    png_path = out_dir / "rate_diagram.png"
 
-    # EXACTLY as cbs(1).py
+    # Match the companion figure export settings.
     fig.savefig(
         pdf_path,
         facecolor="white",
@@ -564,6 +549,7 @@ def make_figure(
 # Main
 # =============================================================================
 
+
 def main() -> None:
 
     parser = argparse.ArgumentParser()
@@ -583,9 +569,7 @@ def main() -> None:
     parser.add_argument(
         "--out-dir",
         type=Path,
-        default=Path(
-            "rate_diagram"
-        ),
+        default=Path("results/figures/rate_diagram"),
     )
 
     parser.add_argument(
@@ -604,7 +588,7 @@ def main() -> None:
     )
 
     make_legend_figure(
-        output_dir=Path(__file__).resolve().parent,
+        output_dir=args.out_dir,
         dpi=args.dpi,
     )
 

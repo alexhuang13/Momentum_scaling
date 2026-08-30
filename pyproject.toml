@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "momentum-scaling"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reproducible experiments for stochastic momentum scaling laws in power-law kernel regression"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -14,8 +14,21 @@ dependencies = [
   "matplotlib>=3.7",
 ]
 
+[project.optional-dependencies]
+notebooks = [
+  "jupyterlab>=4.0",
+  "pandas>=2.0",
+]
+dev = [
+  "black>=24.0",
+]
+
 [project.scripts]
 momentum-scaling = "momentum_scaling.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Render the theoretical batch-size stability schematic."""
 
 from __future__ import annotations
 
@@ -15,19 +16,21 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import NullLocator
 
 
-plt.rcParams.update({
-    "text.usetex": False,
-    "font.family": "sans-serif",
-    "axes.titlesize": 16,
-    "axes.labelsize": 16,
-    "lines.linewidth": 2,
-    "lines.markersize": 6,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "figure.figsize": (5, 4),
-    "legend.fontsize": 10,
-    "legend.handlelength": 1.8,
-})
+plt.rcParams.update(
+    {
+        "text.usetex": False,
+        "font.family": "sans-serif",
+        "axes.titlesize": 16,
+        "axes.labelsize": 16,
+        "lines.linewidth": 2,
+        "lines.markersize": 6,
+        "xtick.labelsize": 12,
+        "ytick.labelsize": 12,
+        "figure.figsize": (5, 4),
+        "legend.fontsize": 10,
+        "legend.handlelength": 1.8,
+    }
+)
 
 
 COLORS = {
@@ -308,7 +311,7 @@ def main() -> None:
     parser.add_argument(
         "--out-dir",
         type=Path,
-        default=Path("stability"),
+        default=Path("results/figures/stability_schematic"),
     )
 
     parser.add_argument(

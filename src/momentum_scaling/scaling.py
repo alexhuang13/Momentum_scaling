@@ -1,4 +1,4 @@
-"""Focused data-scaling experiments derived from the paper notebooks.
+"""Data-scaling experiments derived from the paper notebooks.
 
 This module contains only schedules and numerical orchestration. The shared
 power-law model and SGD/Polyak/Nesterov updates live in :mod:`core`.
@@ -6,6 +6,7 @@ power-law model and SGD/Polyak/Nesterov updates live in :mod:`core`.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 from pathlib import Path
 import platform
@@ -17,6 +18,14 @@ import torch
 from .core import Problem, build_problem, run_aligned_replicas
 
 D_PAPER = [2_000, 4_000, 8_000, 16_000, 32_000, 64_000, 128_000]
+
+
+@dataclass(frozen=True)
+class ScalingRuntime:
+    device: torch.device
+    dtype: torch.dtype
+    seed: int
+    output_dir: Path
 
 
 def _environment(device: torch.device, dtype: torch.dtype, seed: int) -> dict:
@@ -109,7 +118,12 @@ def _base_config(quick: bool) -> dict:
 
 
 def polyak_scaling_experiment(
-    *, device: torch.device, dtype: torch.dtype, seed: int, output_dir: Path, quick: bool,
+    *,
+    device: torch.device,
+    dtype: torch.dtype,
+    seed: int,
+    output_dir: Path,
+    quick: bool,
 ) -> dict:
     """Compare SGD and Polyak at large and data-optimal batch scalings.
 
@@ -118,37 +132,57 @@ def polyak_scaling_experiment(
     """
     config = _base_config(quick)
     problem = build_problem(
-        beta=config["beta"], s=config["s"], sigma=config["sigma"], dim=config["dim"],
-        device=device, dtype=dtype,
+        beta=config["beta"],
+        s=config["s"],
+        sigma=config["sigma"],
+        dim=config["dim"],
+        device=device,
+        dtype=dtype,
     )
     x = config["s"] / (config["s"] + 1.0)
     groups = {
         "sgd_large_batch": {
-            "label": "SGD large batch", "algorithm": "sgd",
-            "step_constant": 1.0, "step_exponent": 1.0 - 2.0 * x,
-            "eta_constant": 0.5, "eta_exponent": 0.0,
-            "gap_constant": 1.0, "gap_exponent": 0.0,
+            "label": "SGD large batch",
+            "algorithm": "sgd",
+            "step_constant": 1.0,
+            "step_exponent": 1.0 - 2.0 * x,
+            "eta_constant": 0.5,
+            "eta_exponent": 0.0,
+            "gap_constant": 1.0,
+            "gap_exponent": 0.0,
             "theory_exponent": config["s"] * (1.0 - 2.0 * x),
         },
         "polyak_large_batch": {
-            "label": "Polyak large batch", "algorithm": "polyak",
-            "step_constant": 1.0, "step_exponent": 1.0 - 2.0 * x,
-            "eta_constant": 0.1, "eta_exponent": 0.0,
-            "gap_constant": 1.0, "gap_exponent": x,
+            "label": "Polyak large batch",
+            "algorithm": "polyak",
+            "step_constant": 1.0,
+            "step_exponent": 1.0 - 2.0 * x,
+            "eta_constant": 0.1,
+            "eta_exponent": 0.0,
+            "gap_constant": 1.0,
+            "gap_exponent": x,
             "theory_exponent": x,
         },
         "sgd_small_batch": {
-            "label": "SGD small batch", "algorithm": "sgd",
-            "step_constant": 1.0, "step_exponent": 1.0 - x,
-            "eta_constant": 0.1, "eta_exponent": 0.0,
-            "gap_constant": 1.0, "gap_exponent": 0.0,
+            "label": "SGD small batch",
+            "algorithm": "sgd",
+            "step_constant": 1.0,
+            "step_exponent": 1.0 - x,
+            "eta_constant": 0.1,
+            "eta_exponent": 0.0,
+            "gap_constant": 1.0,
+            "gap_exponent": 0.0,
             "theory_exponent": x,
         },
         "polyak_small_batch": {
-            "label": "Polyak small batch", "algorithm": "polyak",
-            "step_constant": 1.05, "step_exponent": 1.0 - x,
-            "eta_constant": 0.1, "eta_exponent": x,
-            "gap_constant": 1.0, "gap_exponent": x,
+            "label": "Polyak small batch",
+            "algorithm": "polyak",
+            "step_constant": 1.05,
+            "step_exponent": 1.0 - x,
+            "eta_constant": 0.1,
+            "eta_exponent": x,
+            "gap_constant": 1.0,
+            "gap_exponent": x,
             "theory_exponent": x,
         },
     }
@@ -156,13 +190,24 @@ def polyak_scaling_experiment(
     for group_index, (name, schedule) in enumerate(groups.items()):
         print(f"[polyak-scaling] {schedule['label']}", flush=True)
         for d_index, D in enumerate(config["D"]):
-            K = min(D, max(1, round(schedule["step_constant"] * D ** schedule["step_exponent"])))
+            K = min(
+                D,
+                max(
+                    1, round(schedule["step_constant"] * D ** schedule["step_exponent"])
+                ),
+            )
             B = max(1, D // K)
             eta = schedule["eta_constant"] * D ** (-schedule["eta_exponent"])
             gap = min(1.0, schedule["gap_constant"] * D ** (-schedule["gap_exponent"]))
             record = _run(
-                problem, algorithm=schedule["algorithm"], D=D, B=B, K=K, eta=eta,
-                one_minus_rho=gap, runs=config["runs"],
+                problem,
+                algorithm=schedule["algorithm"],
+                D=D,
+                B=B,
+                K=K,
+                eta=eta,
+                one_minus_rho=gap,
+                runs=config["runs"],
                 seed=_seed(seed, "polyak-scaling", group_index, d_index, D),
                 tail_fraction=0.0,
             )
@@ -183,7 +228,12 @@ def polyak_scaling_experiment(
 
 
 def nesterov_scaling_experiment(
-    *, device: torch.device, dtype: torch.dtype, seed: int, output_dir: Path, quick: bool,
+    *,
+    device: torch.device,
+    dtype: torch.dtype,
+    seed: int,
+    output_dir: Path,
+    quick: bool,
 ) -> dict:
     """Compare all methods at a shared Nesterov-optimal batch scaling.
 
@@ -193,8 +243,12 @@ def nesterov_scaling_experiment(
     config = _base_config(quick)
     config.update({"epsilon": 0.05, "tail_fraction": 0.01, "batch_constant": 0.15})
     problem = build_problem(
-        beta=config["beta"], s=config["s"], sigma=config["sigma"], dim=config["dim"],
-        device=device, dtype=dtype,
+        beta=config["beta"],
+        s=config["s"],
+        sigma=config["sigma"],
+        dim=config["dim"],
+        device=device,
+        dtype=dtype,
     )
     beta, s = config["beta"], config["s"]
     optimal = s / (s + 1.0)
@@ -203,19 +257,31 @@ def nesterov_scaling_experiment(
     x = (s * beta - (beta - 1.0) * a) / (s * beta + 1.0)
     groups = {
         "sgd": {
-            "label": "SGD", "algorithm": "sgd", "eta_constant": 0.3,
-            "eta_exponent": max(optimal - a, 0.0), "gap_constant": 1.0,
-            "gap_exponent": 0.0, "theory_exponent": s * (1.0 - a),
+            "label": "SGD",
+            "algorithm": "sgd",
+            "eta_constant": 0.3,
+            "eta_exponent": max(optimal - a, 0.0),
+            "gap_constant": 1.0,
+            "gap_exponent": 0.0,
+            "theory_exponent": s * (1.0 - a),
         },
         "polyak": {
-            "label": "Polyak", "algorithm": "polyak", "eta_constant": 0.1,
-            "eta_exponent": max(optimal - a, 0.0), "gap_constant": 1.0,
-            "gap_exponent": a - optimal, "theory_exponent": optimal,
+            "label": "Polyak",
+            "algorithm": "polyak",
+            "eta_constant": 0.1,
+            "eta_exponent": max(optimal - a, 0.0),
+            "gap_constant": 1.0,
+            "gap_exponent": a - optimal,
+            "theory_exponent": optimal,
         },
         "nesterov": {
-            "label": "Nesterov", "algorithm": "nesterov", "eta_constant": 0.1,
-            "eta_exponent": 0.0, "gap_constant": 2.0,
-            "gap_exponent": a - x, "theory_exponent": s * (1.0 - x),
+            "label": "Nesterov",
+            "algorithm": "nesterov",
+            "eta_constant": 0.1,
+            "eta_exponent": 0.0,
+            "gap_constant": 2.0,
+            "gap_exponent": a - x,
+            "theory_exponent": s * (1.0 - x),
         },
     }
     results: dict[str, list[dict]] = {name: [] for name in groups}
@@ -227,8 +293,14 @@ def nesterov_scaling_experiment(
             eta = schedule["eta_constant"] * D ** (-schedule["eta_exponent"])
             gap = min(1.0, schedule["gap_constant"] * D ** (-schedule["gap_exponent"]))
             record = _run(
-                problem, algorithm=schedule["algorithm"], D=D, B=B, K=K, eta=eta,
-                one_minus_rho=gap, runs=config["runs"],
+                problem,
+                algorithm=schedule["algorithm"],
+                D=D,
+                B=B,
+                K=K,
+                eta=eta,
+                one_minus_rho=gap,
+                runs=config["runs"],
                 seed=_seed(seed, "nesterov-scaling", group_index, d_index, D),
                 tail_fraction=config["tail_fraction"],
             )
@@ -239,10 +311,30 @@ def nesterov_scaling_experiment(
         "experiment": "nesterov_scaling",
         "preset": "quick" if quick else "paper",
         "environment": _environment(device, dtype, seed),
-        "config": {**config, "max_batch_exponent": max_batch, "shared_batch_exponent": a, "x": x},
+        "config": {
+            **config,
+            "max_batch_exponent": max_batch,
+            "shared_batch_exponent": a,
+            "x": x,
+        },
         "groups": groups,
         "measured_exponents": measured,
         "results": results,
     }
     _save_json(output_dir / "nesterov_scaling.json", payload)
     return payload
+
+
+def scaling_experiment(runtime: ScalingRuntime, *, quick: bool) -> dict[str, dict]:
+    """Run both canonical endpoint-scaling studies."""
+    common = {
+        "device": runtime.device,
+        "dtype": runtime.dtype,
+        "seed": runtime.seed,
+        "output_dir": runtime.output_dir,
+        "quick": quick,
+    }
+    return {
+        "polyak": polyak_scaling_experiment(**common),
+        "nesterov": nesterov_scaling_experiment(**common),
+    }

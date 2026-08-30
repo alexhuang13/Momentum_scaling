@@ -38,7 +38,9 @@ def resolve_device(name: str = "auto") -> torch.device:
     if name != "auto":
         device = torch.device(name)
         if device.type == "cuda" and not torch.cuda.is_available():
-            raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is false.")
+            raise RuntimeError(
+                "CUDA was requested, but torch.cuda.is_available() is false."
+            )
         if device.type == "mps" and not torch.backends.mps.is_available():
             raise RuntimeError("MPS was requested, but it is unavailable.")
         return device
@@ -56,8 +58,13 @@ def resolve_dtype(name: str, device: torch.device) -> torch.dtype:
 
 
 def build_problem(
-    *, beta: float, s: float, sigma: float, dim: int,
-    device: torch.device, dtype: torch.dtype,
+    *,
+    beta: float,
+    s: float,
+    sigma: float,
+    dim: int,
+    device: torch.device,
+    dtype: torch.dtype,
 ) -> Problem:
     if beta <= 1 or s <= 0 or dim <= 0:
         raise ValueError("Require beta > 1, s > 0, and dim > 0.")
@@ -73,7 +80,9 @@ def excess_loss(delta: torch.Tensor, lam: torch.Tensor) -> torch.Tensor:
     return 0.5 * torch.sum(delta.square() * lam, dim=-1)
 
 
-def lookahead(delta: torch.Tensor, previous: torch.Tensor, algorithm: str, rho: float) -> torch.Tensor:
+def lookahead(
+    delta: torch.Tensor, previous: torch.Tensor, algorithm: str, rho: float
+) -> torch.Tensor:
     if algorithm not in ALGORITHMS:
         raise ValueError(f"Unknown algorithm: {algorithm}")
     if algorithm == "sgd":
@@ -86,7 +95,10 @@ def update(
     delta: torch.Tensor,
     previous: torch.Tensor,
     gradient: torch.Tensor,
-    *, algorithm: str, eta: float, rho: float,
+    *,
+    algorithm: str,
+    eta: float,
+    rho: float,
 ) -> torch.Tensor:
     if algorithm == "sgd":
         return delta - eta * gradient
@@ -98,7 +110,10 @@ def update(
 def exact_minibatch_gradient(
     delta: torch.Tensor,
     problem: Problem,
-    *, batch_size: int, chunk: int, generator: torch.Generator,
+    *,
+    batch_size: int,
+    chunk: int,
+    generator: torch.Generator,
 ) -> torch.Tensor:
     """Fresh Gaussian mini-batch gradient without storing the full batch."""
     if delta.ndim != 1:
@@ -109,12 +124,17 @@ def exact_minibatch_gradient(
     while remaining:
         n = min(chunk, remaining)
         x = torch.randn(
-            (n, problem.dim), device=delta.device, dtype=delta.dtype, generator=generator
+            (n, problem.dim),
+            device=delta.device,
+            dtype=delta.dtype,
+            generator=generator,
         )
         x.mul_(sqrt_lam)
         residual = x.mv(delta)
         if problem.sigma:
-            eps = torch.randn(n, device=delta.device, dtype=delta.dtype, generator=generator)
+            eps = torch.randn(
+                n, device=delta.device, dtype=delta.dtype, generator=generator
+            )
             residual.sub_(eps.mul_(problem.sigma))
         grad.add_(x.t().mv(residual))
         remaining -= n
@@ -124,7 +144,9 @@ def exact_minibatch_gradient(
 def aligned_noise_gradient(
     delta: torch.Tensor,
     problem: Problem,
-    *, batch_size: int, generator: torch.Generator,
+    *,
+    batch_size: int,
+    generator: torch.Generator,
 ) -> torch.Tensor:
     """Population gradient plus curvature-aligned Gaussian gradient noise.
 
@@ -143,8 +165,15 @@ def aligned_noise_gradient(
 
 def run_aligned_replicas(
     problem: Problem,
-    *, algorithm: str, batch_size: int, steps: int, eta: float, rho: float,
-    seeds: int, seed: int, tail_fraction: float = 0.0,
+    *,
+    algorithm: str,
+    batch_size: int,
+    steps: int,
+    eta: float,
+    rho: float,
+    seeds: int,
+    seed: int,
+    tail_fraction: float = 0.0,
 ) -> np.ndarray:
     """Run independent replicas in parallel and return final/tail-mean losses."""
     if not 0 <= rho < 1:

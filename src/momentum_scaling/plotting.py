@@ -12,6 +12,7 @@ _MPL_DIR.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("MPLCONFIGDIR", str(_MPL_DIR))
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
@@ -33,15 +34,21 @@ def plot_stability(payload: dict, output_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(6.8, 4.8))
     for name, values in payload["boundary"].items():
         ax.plot(
-            b, values,
+            b,
+            values,
             color=COLORS[name],
             marker=MARKERS[name],
             label=name,
         )
-    ax.set(xscale="log", yscale="log", xlabel="batch size B", ylabel="largest stable learning rate")
-    ax.grid(True, which="both", alpha=0.25); ax.legend()
+    ax.set(
+        xscale="log",
+        yscale="log",
+        xlabel="batch size B",
+        ylabel="largest stable learning rate",
+    )
+    ax.grid(True, which="both", alpha=0.25)
+    ax.legend()
     _save(fig, output_dir / "stability")
-
 
 
 SCALING_MARKERS = {
@@ -55,7 +62,7 @@ SCALING_MARKERS = {
 }
 
 
-def plot_scaling_experiment(payload: dict, output_dir: Path) -> None:
+def plot_scaling(payload: dict, output_dir: Path) -> None:
     """Plot measured points and theory lines for a focused scaling experiment."""
     fig, ax = plt.subplots(figsize=(5.8, 4.6))
     anchor_index = min(3, len(payload["config"]["D"]) - 1)
@@ -63,9 +70,13 @@ def plot_scaling_experiment(payload: dict, output_dir: Path) -> None:
         group = payload["groups"][name]
         data = np.asarray([record["D"] for record in records], dtype=float)
         loss = np.asarray([record["mean"] for record in records], dtype=float)
-        points, = ax.plot(
-            data, loss, linestyle="None", marker=SCALING_MARKERS[name],
-            label=group["label"], zorder=3,
+        (points,) = ax.plot(
+            data,
+            loss,
+            linestyle="None",
+            marker=SCALING_MARKERS[name],
+            label=group["label"],
+            zorder=3,
         )
         exponent = float(group["theory_exponent"])
         reference = loss[anchor_index] * (data / data[anchor_index]) ** (-exponent)
@@ -76,7 +87,7 @@ def plot_scaling_experiment(payload: dict, output_dir: Path) -> None:
     _save(fig, output_dir / payload["experiment"])
 
 
-def plot_scaling_law(payload: dict, output_dir: Path) -> None:
+def plot_loss_dynamics(payload: dict, output_dir: Path) -> None:
     """Plot long-time empirical loss curves and fitted scaling-law predictions."""
     colors = {
         "polyak": {"empirical": "#f6bd83", "prediction": "#d55e00"},
@@ -93,27 +104,67 @@ def plot_scaling_law(payload: dict, output_dir: Path) -> None:
         valid = np.asarray(result["fit_valid_mask"], dtype=bool)
         positive = steps > 0
         ax.plot(
-            steps[positive], empirical[positive],
-            color=colors[algorithm]["empirical"], alpha=0.55, lw=1.4,
+            steps[positive],
+            empirical[positive],
+            color=colors[algorithm]["empirical"],
+            alpha=0.55,
+            lw=1.4,
             label=f"{result['label']} simulation",
         )
         ax.plot(
-            steps[valid], prediction[valid],
-            color=colors[algorithm]["prediction"], lw=1.8,
+            steps[valid],
+            prediction[valid],
+            color=colors[algorithm]["prediction"],
+            lw=1.8,
             label=f"{result['label']} scaling law",
         )
-    ax.set(xscale="log", yscale="log", xlabel="Optimization step k", ylabel="Excess loss")
+    ax.set(
+        xscale="log", yscale="log", xlabel="Optimization step k", ylabel="Excess loss"
+    )
     ax.grid(True, which="both", alpha=0.2)
     ax.legend()
-    _save(fig, output_dir / "scaling_law")
+    _save(fig, output_dir / "loss_dynamics")
+
+
+def plot_blowup(payload: dict, output_dir: Path) -> None:
+    """Plot median loss under the increasing-momentum schedule."""
+    fig, ax = plt.subplots(figsize=(5.8, 4.4))
+    for algorithm in ("sgd", "polyak", "nesterov"):
+        result = payload["trajectories"][algorithm]
+        steps = np.asarray(result["steps"], dtype=float)
+        loss = np.asarray(result["median_loss"], dtype=float)
+        positive = (steps > 0) & np.isfinite(loss) & (loss > 0)
+        label = {"sgd": "SGD", "polyak": "Polyak", "nesterov": "Nesterov"}[algorithm]
+        ax.plot(steps[positive], loss[positive], label=label)
+    ax.set(
+        xscale="log", yscale="log", xlabel="Optimization step k", ylabel="Median loss"
+    )
+    ax.grid(True, which="both", alpha=0.2)
+    ax.legend()
+    _save(fig, output_dir / "blowup")
 
 
 def plot_saved(output_dir: Path) -> None:
     stability = output_dir / "stability.json"
-    if stability.exists(): plot_stability(json.loads(stability.read_text()), output_dir)
-    scaling_law = output_dir / "scaling_law.json"
-    if scaling_law.exists(): plot_scaling_law(json.loads(scaling_law.read_text()), output_dir)
+    if stability.exists():
+        plot_stability(json.loads(stability.read_text()), output_dir)
+    loss_dynamics = output_dir / "loss_dynamics.json"
+    if loss_dynamics.exists():
+        plot_loss_dynamics(json.loads(loss_dynamics.read_text()), output_dir)
+    blowup_summary = output_dir / "blowup.json"
+    blowup_arrays = output_dir / "blowup.npz"
+    if blowup_summary.exists() and blowup_arrays.exists():
+        payload = json.loads(blowup_summary.read_text())
+        with np.load(blowup_arrays, allow_pickle=False) as data:
+            payload["trajectories"] = {
+                algorithm: {
+                    "steps": data[f"{algorithm}_steps"],
+                    "median_loss": data[f"{algorithm}_median_loss"],
+                }
+                for algorithm in ("sgd", "polyak", "nesterov")
+            }
+        plot_blowup(payload, output_dir)
     for name in ("polyak_scaling", "nesterov_scaling"):
         path = output_dir / f"{name}.json"
         if path.exists():
-            plot_scaling_experiment(json.loads(path.read_text()), output_dir)
+            plot_scaling(json.loads(path.read_text()), output_dir)

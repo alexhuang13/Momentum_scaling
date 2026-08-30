@@ -51,7 +51,9 @@ def mean_max_stable_eta(stable: np.ndarray, eta_grid: np.ndarray) -> np.ndarray:
                 per_seed[seed_index, batch_index] = eta_grid[indices[-1]]
     counts = np.sum(np.isfinite(per_seed), axis=0)
     totals = np.nansum(per_seed, axis=0)
-    return np.divide(totals, counts, out=np.full(per_seed.shape[1], np.nan), where=counts > 0)
+    return np.divide(
+        totals, counts, out=np.full(per_seed.shape[1], np.nan), where=counts > 0
+    )
 
 
 def fit_prefactor(
@@ -67,7 +69,9 @@ def fit_prefactor(
     batches = batch_sizes[indices]
     mask = np.isfinite(values) & (values > 0)
     if not np.any(mask):
-        raise ValueError("cannot fit a prediction line without finite positive boundary values")
+        raise ValueError(
+            "cannot fit a prediction line without finite positive boundary values"
+        )
     denominator = batches[mask] ** power * one_minus_rho
     return float(np.exp(np.mean(np.log(values[mask] / denominator))))
 
@@ -76,7 +80,9 @@ def fit_horizontal_level(boundary: np.ndarray, indices: np.ndarray) -> float:
     values = boundary[indices]
     values = values[np.isfinite(values) & (values > 0)]
     if not values.size:
-        raise ValueError("cannot fit a horizontal prediction without finite positive values")
+        raise ValueError(
+            "cannot fit a horizontal prediction without finite positive values"
+        )
     return float(np.exp(np.mean(np.log(values))))
 
 
@@ -104,8 +110,10 @@ def plot(data_path: Path, output_stem: Path) -> None:
 
     # Polyak follows eta proportional to B(1-rho).
     polyak_coefficient = fit_prefactor(
-        boundaries["Polyak"], batch_sizes,
-        power=1.0, one_minus_rho=one_minus_rho,
+        boundaries["Polyak"],
+        batch_sizes,
+        power=1.0,
+        one_minus_rho=one_minus_rho,
     )
     polyak_prediction = polyak_coefficient * batch_sizes * one_minus_rho
 
@@ -113,33 +121,39 @@ def plot(data_path: Path, output_stem: Path) -> None:
     power_indices = np.flatnonzero(batch_sizes <= 32)
     flat_indices = np.flatnonzero(batch_sizes >= 64)
     nesterov_coefficient = fit_prefactor(
-        boundaries["Nesterov"], batch_sizes,
-        power=beta, one_minus_rho=one_minus_rho, indices=power_indices,
+        boundaries["Nesterov"],
+        batch_sizes,
+        power=beta,
+        one_minus_rho=one_minus_rho,
+        indices=power_indices,
     )
     nesterov_level = fit_horizontal_level(boundaries["Nesterov"], flat_indices)
-    intersection = (
-        nesterov_level / (nesterov_coefficient * one_minus_rho)
-    ) ** (1.0 / beta)
+    intersection = (nesterov_level / (nesterov_coefficient * one_minus_rho)) ** (
+        1.0 / beta
+    )
     nesterov_batches = np.sort(np.unique(np.append(batch_sizes, intersection)))
     nesterov_prediction = np.minimum(
-        nesterov_coefficient * nesterov_batches ** beta * one_minus_rho,
+        nesterov_coefficient * nesterov_batches**beta * one_minus_rho,
         nesterov_level,
     )
 
-    plt.rcParams.update({
-        "font.family": "sans-serif",
-        "axes.labelsize": 16,
-        "xtick.labelsize": 12,
-        "ytick.labelsize": 12,
-        "legend.fontsize": 10,
-    })
+    plt.rcParams.update(
+        {
+            "font.family": "sans-serif",
+            "axes.labelsize": 16,
+            "xtick.labelsize": 12,
+            "ytick.labelsize": 12,
+            "legend.fontsize": 10,
+        }
+    )
     fig, ax = plt.subplots(figsize=(5.0, 4.0))
 
     for name in algorithms:
         boundary = boundaries[name]
         mask = np.isfinite(boundary) & (boundary > 0)
         ax.plot(
-            batch_sizes[mask], boundary[mask],
+            batch_sizes[mask],
+            boundary[mask],
             linestyle="None",
             marker=MARKERS[name],
             markersize=6,
@@ -152,19 +166,31 @@ def plot(data_path: Path, output_stem: Path) -> None:
         )
 
     ax.plot(
-        batch_sizes, sgd_prediction,
-        color=COLORS["SGD"], linestyle="--", linewidth=1.8,
-        label="SGD Prediction", zorder=2,
+        batch_sizes,
+        sgd_prediction,
+        color=COLORS["SGD"],
+        linestyle="--",
+        linewidth=1.8,
+        label="SGD Prediction",
+        zorder=2,
     )
     ax.plot(
-        batch_sizes, polyak_prediction,
-        color=COLORS["Polyak"], linestyle="--", linewidth=1.8,
-        label="Polyak Prediction", zorder=2,
+        batch_sizes,
+        polyak_prediction,
+        color=COLORS["Polyak"],
+        linestyle="--",
+        linewidth=1.8,
+        label="Polyak Prediction",
+        zorder=2,
     )
     ax.plot(
-        nesterov_batches, nesterov_prediction,
-        color=COLORS["Nesterov"], linestyle="--", linewidth=1.8,
-        label="Nesterov Prediction", zorder=2,
+        nesterov_batches,
+        nesterov_prediction,
+        color=COLORS["Nesterov"],
+        linestyle="--",
+        linewidth=1.8,
+        label="Nesterov Prediction",
+        zorder=2,
     )
 
     ax.set_xscale("log", base=2)
@@ -184,20 +210,28 @@ def plot(data_path: Path, output_stem: Path) -> None:
     fig.savefig(output_stem.with_suffix(".png"), dpi=180, bbox_inches="tight")
     fig.savefig(output_stem.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
-    print(f"wrote {output_stem.with_suffix('.png')} and {output_stem.with_suffix('.pdf')}")
+    print(
+        f"wrote {output_stem.with_suffix('.png')} and {output_stem.with_suffix('.pdf')}"
+    )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--beta", type=float, default=1.5)
     parser.add_argument("--s", type=float, default=2.0)
-    parser.add_argument("--all", action="store_true", help="plot every preserved reference scan")
+    parser.add_argument(
+        "--all", action="store_true", help="plot every preserved reference scan"
+    )
     args = parser.parse_args()
 
     settings = AVAILABLE_SETTINGS if args.all else ((args.beta, args.s),)
     if not args.all and (args.beta, args.s) not in AVAILABLE_SETTINGS:
-        choices = ", ".join(f"(beta={beta:g}, s={s:g})" for beta, s in AVAILABLE_SETTINGS)
-        parser.error(f"no preserved data for beta={args.beta:g}, s={args.s:g}; available: {choices}")
+        choices = ", ".join(
+            f"(beta={beta:g}, s={s:g})" for beta, s in AVAILABLE_SETTINGS
+        )
+        parser.error(
+            f"no preserved data for beta={args.beta:g}, s={args.s:g}; available: {choices}"
+        )
 
     for beta, s in settings:
         data_path, output_stem = paths_for(beta, s)

@@ -118,18 +118,19 @@ In the presence of label noise:
 
 ### Key Numerical Results
 
-The numerical evidence follows the theory in three steps:
+The numerical evidence is organized into four distinct experiment types:
 
-1. Stability scans recover the different dependence on $B$ and $1-\rho$.
-2. Long-time runs recover the transient-to-scaling transition and the distinct Polyak and Nesterov noise floors across six $(s,\beta)$ settings.
-3. Data-budget runs recover the predicted small-, large-, and ultra-large-batch exponents, while a fixed-$D$ sweep shows the shift in the best batch size.
+1. **Stability** scans recover the different dependence on $B$ and $1-\rho$.
+2. **Loss-dynamics** runs recover the transient-to-scaling transition and the distinct Polyak and Nesterov noise floors across six $(s,\beta)$ settings.
+3. **Scaling** runs recover the predicted small-, large-, and ultra-large-batch exponents, while a fixed-$D$ sweep shows the shift in the best batch size.
+4. **Blowup** runs stress-test the optimizers under an explicitly time-varying momentum schedule.
 
 #### Scaling-law fits across six PLK settings
 
 The $2\times3$ sweep uses $s\in\{0.3,0.5\}$ and $\beta\in\{2,4,6\}$. Pale curves show the empirical population loss and solid curves show the fitted theoretical total. The time dependence of the transient, signal, and noise terms is fixed by theory; only nonnegative $O(1)$ coefficients are fitted.
 
 <p align="center">
-  <a href="new_scaling/scaling%20law/scaling_law/scaling_law_fits_2x3.pdf"><img src="new_scaling/scaling%20law/scaling_law/scaling_law_fits_2x3.png" alt="Scaling-law fits across six source and capacity exponent pairs" width="850"></a>
+  <a href="paper_artifacts/loss_dynamics/scaling_law_fits/scaling_law_fits_2x3.pdf"><img src="paper_artifacts/loss_dynamics/scaling_law_fits/scaling_law_fits_2x3.png" alt="Scaling-law fits across six source and capacity exponent pairs" width="850"></a>
 </p>
 
 The fits track both the oscillatory transient and the algebraic regime. For $s=0.5$, the late-time curves also expose Nesterov's lower noise floor increasingly clearly as $\beta$ grows.
@@ -138,7 +139,7 @@ The fits track both the oscillatory transient and the algebraic regime. For $s=0
 
 | Long-time loss scaling | Transition time versus $1-\rho$ |
 |---|---|
-| <a href="new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.pdf"><img src="new_scaling/scaling%20law/new/total_loss_experiment_vs_theory.png" alt="Empirical long-time loss and scaling-law predictions" width="430"></a> | <a href="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.pdf"><img src="new_scaling/scaling%20law/results/new_scaling/derivative_transition_vs_one_minus_rho.png" alt="Derivative-detected transition versus momentum gap" width="430"></a> |
+| <a href="paper_artifacts/loss_dynamics/standalone_transition_figure/total_loss_experiment_vs_theory.pdf"><img src="paper_artifacts/loss_dynamics/standalone_transition_figure/total_loss_experiment_vs_theory.png" alt="Empirical long-time loss and scaling-law predictions" width="430"></a> | <a href="paper_artifacts/loss_dynamics/phase_transitions/derivative_transition_vs_one_minus_rho.pdf"><img src="paper_artifacts/loss_dynamics/phase_transitions/derivative_transition_vs_one_minus_rho.png" alt="Derivative-detected transition versus momentum gap" width="430"></a> |
 
 The transition from the oscillatory transient to algebraic scaling occurs at $k_{\rm tr}\propto(1-\rho)^{-1}$. Nesterov enters the scaling regime slightly earlier and reaches its lower noise-dominated regime later than Polyak.
 
@@ -146,7 +147,7 @@ The transition from the oscillatory transient to algebraic scaling occurs at $k_
 
 | Small batch | Large batch | Ultra-large batch |
 |---|---|---|
-| <a href="new_scaling/nag_acc_three_phases/s0.3beta4/small_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/small_batch.png" alt="Small-batch data scaling" width="280"></a> | <a href="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="280"></a> | <a href="new_scaling/nag_acc_three_phases/s0.3beta4/super_large_batch.pdf"><img src="new_scaling/nag_acc_three_phases/s0.3beta4/super_large_batch.png" alt="Ultra-large-batch data scaling" width="280"></a> |
+| <a href="paper_artifacts/scaling/batch_regimes/s0.3beta4/small_batch.pdf"><img src="paper_artifacts/scaling/batch_regimes/s0.3beta4/small_batch.png" alt="Small-batch data scaling" width="280"></a> | <a href="paper_artifacts/scaling/batch_regimes/s0.3beta4/large_batch.pdf"><img src="paper_artifacts/scaling/batch_regimes/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="280"></a> | <a href="paper_artifacts/scaling/batch_regimes/s0.3beta4/super_large_batch.pdf"><img src="paper_artifacts/scaling/batch_regimes/s0.3beta4/super_large_batch.png" alt="Ultra-large-batch data scaling" width="280"></a> |
 
 For $(s,\beta)=(0.3,4)$, all three methods share the same small-batch exponent. Nesterov is fastest in the large-batch regime, while Polyak and Nesterov share the same exponent once the batch is ultra-large. In the large-batch run, the theoretical/measured exponents are $0.1772/0.1787$ for SGD, $0.2308/0.2321$ for Polyak, and $0.3039/0.3074$ for Nesterov.
 
@@ -154,7 +155,7 @@ For $(s,\beta)=(0.3,4)$, all three methods share the same small-batch exponent. 
 
 | Critical batch-size sweep | Increasing-momentum diagnostic |
 |---|---|
-| <a href="new_scaling/cbs/s_0.3_beta_4/cbs.pdf"><img src="new_scaling/cbs/s_0.3_beta_4/cbs.png" alt="Fixed-budget critical batch-size sweep" width="430"></a> | <a href="new_scaling/blowup/blowup_time.pdf"><img src="new_scaling/blowup/blowup_time.png" alt="Loss under an increasingly aggressive momentum schedule" width="430"></a> |
+| <a href="paper_artifacts/scaling/critical_batch_size/s_0.3_beta_4/cbs.pdf"><img src="paper_artifacts/scaling/critical_batch_size/s_0.3_beta_4/cbs.png" alt="Fixed-budget critical batch-size sweep" width="430"></a> | <a href="paper_artifacts/blowup/blowup_time.pdf"><img src="paper_artifacts/blowup/blowup_time.png" alt="Loss under an increasingly aggressive momentum schedule" width="430"></a> |
 
 At fixed $D=2^{14}$, Nesterov attains the lowest loss and shifts the best batch size upward. Under $\rho_k=1-1/(k+1)$, Polyak eventually becomes unstable, whereas Nesterov remains stable over the saved 500,000-step horizon.
 
@@ -162,101 +163,75 @@ At fixed $D=2^{14}$, Nesterov attains the lowest loss and shifts the best batch 
 
 ## 🧪 Experiments
 
-The notebooks under `new_scaling/` are the primary interactive entry points for the paper experiments. Start Jupyter from the repository root so that relative output paths resolve under `results/` as documented.
+The repository uses four scientific categories. The category describes the
+question being asked, not the optimizer or the plotting style.
 
-### Notebook workflow (recommended)
+| Category | What it measures | Notebook entry points | Reusable module | CLI |
+|---|---|---|---|---|
+| **Scaling** | Endpoint loss across data budgets or batch-size regimes | [batch regimes](experiments/scaling/batch_regimes.ipynb), [critical batch size](experiments/scaling/critical_batch_size.ipynb) | `scaling.py` | `momentum-scaling scaling` |
+| **Stability** | Largest stable learning rate | [versus batch size](experiments/stability/batch_size.ipynb), [versus momentum gap](experiments/stability/momentum_gap.ipynb) | `stability.py` | `momentum-scaling stability` |
+| **Loss dynamics** | Loss as a function of optimization step in stable runs | [scaling-law fits](experiments/loss_dynamics/scaling_law_fits.ipynb), [phase transitions](experiments/loss_dynamics/phase_transitions.ipynb) | `loss_dynamics.py` | `momentum-scaling loss-dynamics` |
+| **Blowup** | Failure under the time-varying schedule $\rho_k=1-1/(k+1)$ | [increasing momentum](experiments/blowup/increasing_momentum.ipynb) | `blowup.py` | `momentum-scaling blowup` |
 
-| Question | Notebook | Main sweep |
-|---|---|---|
-| How does the stability boundary depend on batch size? | [`new_scaling/stability_batch_size_gpu.ipynb`](new_scaling/stability_batch_size_gpu.ipynb) | $B$ and $\eta$, with $1-\rho=2^{-24}$ fixed |
-| How does the stability boundary depend on momentum? | [`new_scaling/stability_momentum_gap.ipynb`](new_scaling/stability_momentum_gap.ipynb) | $1-\rho$ and $\eta$, with $B=32$ fixed |
-| How well do the time-domain scaling laws fit? | [`new_scaling/scaling law/scaling_law_fitting_experiments.ipynb`](new_scaling/scaling%20law/scaling_law_fitting_experiments.ipynb) | Six $(s,\beta)$ settings |
-| When does the transient-to-scaling transition occur? | [`new_scaling/scaling law/momentum_three_phase_transitions.ipynb`](new_scaling/scaling%20law/momentum_three_phase_transitions.ipynb) | Training time and $1-\rho$ |
-| What are the three data-scaling regimes? | [`new_scaling/nag_acc_three_phases.ipynb`](new_scaling/nag_acc_three_phases.ipynb) | Data budget across batch regimes |
-| Which batch size is best at fixed data budget? | [`new_scaling/cbs.ipynb`](new_scaling/cbs.ipynb) | $B$ at fixed $D=2^{14}$ |
+The complete experiment map is in [`experiments/README.md`](experiments/README.md).
+Launch Jupyter from the repository root so every notebook writes to the ignored
+`results/<category>/...` tree. Committed paper outputs are reference artifacts
+under `paper_artifacts/`, not runnable code.
 
-The two stability notebooks are intentionally separate. Use `stability_batch_size_gpu.ipynb` for a plot with $B$ on the horizontal axis; use `stability_momentum_gap.ipynb` for a plot with $1-\rho$ on the horizontal axis. Both compare SGD, Polyak heavy-ball, and Nesterov momentum.
+### 1. Scaling
 
-### Command-line workflow
+Use scaling experiments when the horizontal axis is data budget $D$ or batch
+size $B$ and the quantity of interest is final or tail-averaged loss.
 
-The package CLI provides smaller smoke tests and automation-friendly versions of the three core components:
-
-| Experiment | Source file | CLI command | Main outputs |
-|---|---|---|---|
-| Stability | `src/momentum_scaling/stability.py` | `momentum-scaling stability` | `stability.json`, `stability.npz`, `stability.png`, `stability.pdf` |
-| Scaling law | `src/momentum_scaling/scaling_law.py` | `momentum-scaling scaling-law` | `scaling_law.json`, `scaling_law_polyak.npz`, `scaling_law_nesterov.npz`, `scaling_law.png`, `scaling_law.pdf` |
-| Data scaling | `src/momentum_scaling/data_scaling.py` | `momentum-scaling data-scaling` | `polyak_scaling.json/png/pdf`, `nesterov_scaling.json/png/pdf` |
-
-Shared model construction, optimizers, device selection, and stochastic-gradient utilities live in `src/momentum_scaling/core.py`. Plotting is kept separate in `src/momentum_scaling/plotting.py`, and `src/momentum_scaling/cli.py` only dispatches commands.
-
-### 1. Stability experiments
-
-For the paper-scale batch-size scan, open [`new_scaling/stability_batch_size_gpu.ipynb`](new_scaling/stability_batch_size_gpu.ipynb) and run its cells from top to bottom. The default configuration uses double precision, selects CUDA when available, sweeps $B=2^0,\ldots,2^{12}$ and 50 learning rates, and averages the boundary over five seeds. Its cache and figure are written under `results/stability_batch_size/`.
-
-For the complementary momentum-gap scan at fixed $B=32$, run [`new_scaling/stability_momentum_gap.ipynb`](new_scaling/stability_momentum_gap.ipynb). Set `PAPER_RUN=False` in its configuration cell for a short smoke test. Its outputs are written under `results/stability_momentum_gap/`.
-
-The CLI below is an automation-friendly batch-size stability scan:
+- `batch_regimes.ipynb` compares the small-, large-, and ultra-large-batch exponents.
+- `critical_batch_size.ipynb` searches for the best $B$ at fixed $D=2^{14}$.
+- The CLI runs the focused Polyak and Nesterov scaling studies:
 
 ```bash
-momentum-scaling stability --preset quick --device auto --output-dir results/stability
+momentum-scaling scaling --preset quick --device auto --output-dir results/scaling/quick
 ```
 
-Use `--preset paper` for the larger configuration used to produce paper-quality stability boundaries.
+### 2. Stability
 
-### 2. Scaling-law experiment
+Use stability experiments when the output is a largest stable learning rate.
 
-This experiment fixes `B`, `eta`, and `rho`, then runs Polyak and Nesterov for many optimization steps. It checks the long-time loss curve against the scaling-law decomposition into transient, signal-learning, and noise-floor terms.
+- `batch_size.ipynb` sweeps $(B,\eta)$ at fixed $1-\rho=2^{-24}$.
+- `momentum_gap.ipynb` sweeps $(1-\rho,\eta)$ at fixed $B=32$.
+- The CLI provides an automation-friendly batch-size scan:
 
 ```bash
-momentum-scaling scaling-law --preset quick --device auto --output-dir results/scaling_law
+momentum-scaling stability --preset quick --device auto --output-dir results/stability/quick
 ```
 
-For $\eta_\rho=\eta/(1-\rho)$, the fitted prediction curves use
+### 3. Loss dynamics
 
-$$
-L_{\rm Polyak}(k)
-\approx
-C_T\rho^k
-+C_S(\eta_\rho k)^{-s}
-+C_N\frac{\sigma^2}{B}\eta_\rho,
-$$
-
-and
-
-$$
-L_{\rm Nesterov}(k)
-\approx
-C_T
-\left(\frac{(1-\rho)^2}{\eta}\right)^{s+1/\beta}
-\left(\frac{4\rho^2}{(1+\rho)^2}\right)^k
-+C_S(\eta_\rho k)^{-s}
-+C_N\frac{\sigma^2}{B}\min\{\eta_\rho,\eta_\rho^{1/\beta}\}.
-$$
-
-The constants $C_T,C_S,C_N\ge0$ are fitted only to restore unspecified $O(1)$ factors in the asymptotic theory. The six-setting paper-scale sweep is in `new_scaling/scaling law/scaling_law_fitting_experiments.ipynb`; the transition analysis and long-time figure are in `new_scaling/scaling law/momentum_three_phase_transitions.ipynb`.
-
-### 3. Data-scaling experiment
-
-This experiment varies the total data budget $D=BK$ and measures how the final excess risk decays with $D$. It contains the focused Polyak batch-scaling study and the shared Nesterov-optimal large-batch study.
+Use loss dynamics for step-resolved curves at fixed $B$, $\eta$, and $\rho$.
+These experiments fit and visualize the transient, signal-learning, and
+noise-floor terms; they are not data-budget scaling experiments.
 
 ```bash
-momentum-scaling data-scaling --preset quick --device auto --output-dir results/data_scaling
+momentum-scaling loss-dynamics --preset quick --device auto \
+  --output-dir results/loss_dynamics/quick
 ```
 
-The two data-scaling sub-experiments can also be run independently:
+### 4. Blowup
+
+Blowup is a separate diagnostic because $\rho_k$ changes during training. The
+notebook and CLI compare SGD, Polyak, and Nesterov under the same increasing
+momentum schedule.
 
 ```bash
-momentum-scaling polyak-scaling --preset quick --device auto --output-dir results/polyak
-momentum-scaling nesterov-scaling --preset quick --device auto --output-dir results/nesterov
+momentum-scaling blowup --preset quick --device auto --output-dir results/blowup/quick
 ```
 
-### Run all three
+### Run the complete quick suite
 
 ```bash
 momentum-scaling all --preset quick --device auto --output-dir results/quick
 ```
 
-The `quick` preset is a smoke test for correctness and device setup. For quantitative claims, use the `paper` preset and enough repetitions for the relevant experiment.
+The `quick` preset checks wiring and device setup. Use the notebook-specific
+paper configuration for quantitative claims.
 
 <a id="getting-started"></a>
 
@@ -266,35 +241,31 @@ The `quick` preset is a smoke test for correctness and device setup. For quantit
 
 ```text
 .
-├── README.md
-├── pyproject.toml              # Editable installation and CLI entry point
-├── requirements.txt
-├── new_scaling/                # Paper-scale notebooks, scripts, and saved experiment results
-│   ├── stability_batch_size_gpu.ipynb
-│   │                              # Stability versus batch size B
-│   ├── stability_momentum_gap.ipynb
-│   │                              # Stability versus momentum gap 1-rho
-│   ├── cbs.ipynb                 # Best batch size at a fixed data budget
-│   ├── nag_acc_three_phases.ipynb
-│   │                              # Small-, large-, and ultra-large-batch regimes
-│   ├── scaling law/             # Scaling-law fits and time-domain transitions
-│   ├── nag_acc_three_phases/    # Three batch-regime data-scaling figures
-│   ├── cbs/                     # Fixed-budget batch sweeps and CSV summaries
-│   └── blowup/                  # Increasing-momentum stability diagnostic
-├── src/momentum_scaling/
-│   ├── core.py                 # Power-law problem, shared backend, and optimizers
-│   ├── stability.py            # Stability-boundary experiment
-│   ├── scaling_law.py          # Long-time scaling-law experiment
-│   ├── data_scaling.py         # Data-budget scaling experiments
-│   ├── plotting.py             # Generates figures from saved results
-│   └── cli.py                  # Unified command-line interface
-├── tests/test_core.py          # Tests for the model and update equations
-├── assets/figures/             # Selected reference figures
-├── assets/results/             # Numerical means from the original notebook runs
-└── results/                    # New runtime outputs, excluded from version control
+├── experiments/                # Interactive paper experiment entry points
+│   ├── scaling/
+│   ├── stability/
+│   ├── loss_dynamics/
+│   └── blowup/
+├── src/momentum_scaling/       # Reusable numerical implementation
+│   ├── core.py
+│   ├── scaling.py
+│   ├── stability.py
+│   ├── loss_dynamics.py
+│   ├── blowup.py
+│   ├── plotting.py
+│   └── cli.py
+├── paper_artifacts/            # Committed outputs from paper-scale runs
+├── assets/                     # Curated figures and reference arrays
+├── scripts/                    # Standalone plotting and maintenance tools
+├── results/                    # New runtime outputs, excluded from Git
+├── tests/
+├── pyproject.toml
+└── README.md
 ```
 
-Paper-scale notebooks are consolidated under `new_scaling/`; the two stability filenames state which variable is swept. Reusable package code lives under `src/`, selected paper-quality figures are stored under `assets/figures/`, and new caches and generated outputs belong under the ignored `results/` directory.
+The data flow is one-way: notebooks and the CLI call reusable code under `src/`;
+new runs write to `results/`; selected completed runs may be copied deliberately
+to `paper_artifacts/`. Generated files never serve as source code.
 
 ### Installation
 
@@ -307,12 +278,12 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-`requirements.txt` contains only NumPy, PyTorch, and Matplotlib. For NVIDIA GPUs, first install the PyTorch build that matches the local CUDA version, then run `python -m pip install -e .`.
+The core package contains NumPy, PyTorch, and Matplotlib. For NVIDIA GPUs, first install the PyTorch build that matches the local CUDA version, then install this package.
 
-Jupyter is kept as an optional interactive dependency. If it is not already available in the environment, install and launch it from the repository root:
+Install the notebook dependencies and launch Jupyter from the repository root:
 
 ```bash
-python -m pip install jupyterlab
+python -m pip install -e ".[notebooks]"
 jupyter lab
 ```
 
@@ -349,21 +320,13 @@ The generated files are:
 
 ```text
 results/quick/
-├── stability.json
-├── stability.npz
-├── stability.png
-├── stability.pdf
-├── scaling_law.json
-├── scaling_law_polyak.npz
-├── scaling_law_nesterov.npz
-├── scaling_law.png
-├── scaling_law.pdf
-├── polyak_scaling.json
-├── polyak_scaling.png
-├── polyak_scaling.pdf
-├── nesterov_scaling.json
-├── nesterov_scaling.png
-└── nesterov_scaling.pdf
+├── stability.{json,npz,png,pdf}
+├── polyak_scaling.{json,png,pdf}
+├── nesterov_scaling.{json,png,pdf}
+├── loss_dynamics.{json,png,pdf}
+├── loss_dynamics_polyak.npz
+├── loss_dynamics_nesterov.npz
+└── blowup.{json,npz,png,pdf}
 ```
 
 The JSON files record the configuration, device, random seed, schedules, means, standard deviations, and fitted exponents or scaling-law coefficients. The NPZ files store dense numerical arrays such as stability grids, per-seed boundaries, and long-time loss curves.
