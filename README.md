@@ -1,95 +1,227 @@
-# Momentum in Large-Batch Training
+# Momentum in Large-Batch Training: Polyak Enlarges the Critical Batch Size, Nesterov Improves Data Efficiency
 
-This repository contains the experiments for **SGD**, **Polyak momentum**, and
-**Nesterov momentum** in power-law kernel regression. It is organized for a
-reader, not around implementation layers: the repository has exactly four
-experiment folders, and each folder contains its notebooks, Python code,
-explanation, and saved results.
+<p align="center">
+  <a href="#introduction">📖 Introduction</a> •
+  <a href="#main-results">📊 Main Results</a> •
+  <a href="#experiments">🧪 Experiments</a> •
+  <a href="#getting-started">🚀 Getting Started</a> •
+  <a href="#citation">📚 Citation</a>
+</p>
 
-The model uses
+<a id="introduction"></a>
+
+## 📖 Introduction
+
+Momentum is a central ingredient in modern optimization, but its interaction with stochastic gradient noise and spectral structure is still not fully understood. Classical theory explains acceleration in deterministic settings, while offering a less complete picture of why Polyak and Nesterov momentum can behave differently in mini-batch training.
+
+In this work, we study **SGD**, **Polyak heavy-ball momentum**, and **Nesterov momentum** in power-law kernel regression with Gaussian features. This model provides a tractable multi-scale learning problem in which the spectrum, target smoothness, gradient noise, and momentum dynamics can be analyzed together. The feature covariance spectrum and target obey
 
 $$
 \lambda_j \asymp j^{-\beta}, \qquad
-\lambda_j |\theta_j^*|^2 \asymp j^{-(1+s\beta)}.
+\lambda_j |\theta_j^*|^2 \asymp j^{-(1+s\beta)},
 $$
 
-## Experiments and results
+where $\beta>1$ is the capacity exponent and $s>0$ is the source exponent. Smaller $s$ places more target energy in low-curvature directions and therefore corresponds to a harder learning problem.
 
-| Folder | Question | Start here | Main saved result |
-|---|---|---|---|
-| [`data_scaling/`](data_scaling/) | How does final loss scale with data budget and batch size? | [`batch_regimes.ipynb`](data_scaling/batch_regimes.ipynb), [`critical_batch_size.ipynb`](data_scaling/critical_batch_size.ipynb) | Nesterov has the fastest large-batch exponent and the lowest fixed-budget loss. |
-| [`loss/`](loss/) | How does loss evolve over optimization time? | [`scaling_law_fits.ipynb`](loss/scaling_law_fits.ipynb), [`phase_transitions.ipynb`](loss/phase_transitions.ipynb) | The fits recover transient, algebraic, and noise-floor regimes; Nesterov has the lower noise floor. |
-| [`blowup/`](blowup/) | What happens under increasing momentum? | [`increasing_momentum.ipynb`](blowup/increasing_momentum.ipynb) | Polyak eventually diverges while Nesterov remains stable over the saved horizon. |
-| [`stability/`](stability/) | Which learning rates remain stable? | [`batch_size.ipynb`](stability/batch_size.ipynb), [`momentum_gap.ipynb`](stability/momentum_gap.ipynb) | The aligned scans test the two normalized stability laws with a shared cross-point. |
+Our analysis connects mean-square stability with data scaling under a fixed budget $D=BK$, where $B$ is the batch size and $K$ is the number of optimization steps. It shows that Polyak momentum mainly enlarges the useful batch-size range, whereas Nesterov momentum can improve the optimal data-scaling exponent through curvature-dependent damping of stochastic noise.
 
-| Data scaling | Blowup | Stability |
+This repository contains self-contained PyTorch implementations of the numerical
+experiments. The notebooks share the same update rules and automatically select
+CUDA, Apple Silicon, or CPU.
+
+<a id="main-results"></a>
+
+## 📊 Main Results
+
+### 1. Stochastic Stability Boundaries
+
+<table align="center">
+  <thead>
+    <tr>
+      <th align="center">Method</th>
+      <th align="center">Critical learning rate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">SGD</td>
+      <td align="center">η<sup>crit</sup> ≍ 1</td>
+    </tr>
+    <tr>
+      <td align="center">Polyak</td>
+      <td align="center">η<sup>crit</sup> ≍ min{1, B(1−ρ)}</td>
+    </tr>
+    <tr>
+      <td align="center">Nesterov</td>
+      <td align="center">η<sup>crit</sup> ≍ min{1, B<sup>β</sup>(1−ρ)}</td>
+    </tr>
+  </tbody>
+</table>
+
+Nesterov's look-ahead correction makes its stable region grow faster with batch size, allowing it to reach the deterministic stability ceiling earlier than Polyak momentum.
+
+### 2. Excess-Risk Scaling Laws
+
+The expected excess risk admits a signal-learning and noise-accumulation decomposition:
+
+$$
+\mathbb{E}[\mathcal E(\theta_k)]
+\asymp
+\mathcal D(k)
++
+\frac{\eta^2}{B}
+\sum_{m=0}^{k-1}
+\mathcal K(k-1-m)
+(\mathbb{E}[\mathcal E(\theta_m)]+\sigma^2),
+$$
+
+where $\mathcal D(k)$ describes how the target signal is learned and $\mathcal K(\tau)$ describes how long stochastic noise remains in the dynamics. In the noisy setting, the leading long-time terms are
+
+$$
+\begin{aligned}
+\text{SGD:}\qquad
+\mathbb{E}[\mathcal E(\theta_k)]
+&\asymp
+(\eta k)^{-s}
++
+\frac{\eta\sigma^2}{B},\\
+\text{Polyak:}\qquad
+\mathbb{E}[\mathcal E(\theta_k)]
+&\asymp
+(\frac{1-\rho}{\eta k})^s
++
+\frac{\eta\sigma^2}{B(1-\rho)},\\
+\text{Nesterov:}\qquad
+\mathbb{E}[\mathcal E(\theta_k)]
+&\asymp
+(\frac{1-\rho}{\eta k})^s
++
+\frac{\sigma^2}{B}
+\min\{
+\frac{\eta}{1-\rho},
+(\frac{\eta}{1-\rho})^{1/\beta}
+\},
+\end{aligned}
+$$
+
+up to exponentially decaying transient and lower-order multiplicative-noise terms. Both momentum methods accelerate signal learning through the effective learning rate $\eta/(1-\rho)$. Polyak momentum, however, amplifies label noise by the same factor, whereas Nesterov's curvature-dependent damping clips noise accumulation in sharper spectral directions. This difference is the mechanism behind Nesterov's improved data-scaling exponent.
+
+### 3. Data Scaling
+
+In the presence of label noise:
+
+- SGD achieves the optimal data-scaling rate $D^{-s/(s+1)}$.
+- Polyak momentum achieves the same optimal rate but preserves it over a substantially larger range of batch sizes.
+- Nesterov momentum achieves the faster rate $D^{-2s\beta/(2s\beta+\beta+1)+o(1)}$.
+
+| Theoretical stability boundary | Data-scaling phase diagram | Critical batch size |
 |---|---|---|
-| <a href="data_scaling/results/batch_regimes/s0.3beta4/large_batch.pdf"><img src="data_scaling/results/batch_regimes/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="260"></a> | <a href="blowup/results/blowup_time.pdf"><img src="blowup/results/blowup_time.png" alt="Increasing-momentum blowup" width="260"></a> | <a href="stability/results/batch_size_schematic/stability_boundary.pdf"><img src="stability/results/batch_size_schematic/stability_boundary.png" alt="Stability boundary" width="260"></a> |
+| <a href="stability/results/overview/polyak_nesterov_sgd_boundary_schematic.pdf"><img src="stability/results/overview/polyak_nesterov_sgd_boundary_schematic.png" alt="Stability boundary schematic" width="300"></a> | <a href="data_scaling/results/overview/rate_diagram.pdf"><img src="data_scaling/results/overview/rate_diagram.png" alt="Data-scaling phase diagram" width="300"></a> | <a href="data_scaling/results/overview/cbs.pdf"><img src="data_scaling/results/overview/cbs.png" alt="Batch-size sweep" width="300"></a> |
 
-### Data scaling
+### Key Numerical Results
 
-For $(s,\beta)=(0.3,4)$, all three methods share the small-batch exponent.
-Nesterov is fastest in the large-batch regime. The theoretical/measured
-large-batch exponents are $0.1772/0.1787$ for SGD, $0.2308/0.2321$ for Polyak,
-and $0.3039/0.3074$ for Nesterov. At fixed $D=2^{14}$, Nesterov reaches the
-lowest loss and shifts the best batch size upward.
+The numerical evidence is organized into four distinct experiment types:
 
-### Loss
+1. **Stability** scans recover the different dependence on $B$ and $1-\rho$.
+2. **Loss-dynamics** runs recover the transient-to-scaling transition and the distinct Polyak and Nesterov noise floors across six $(s,\beta)$ settings.
+3. **Scaling** runs recover the predicted small-, large-, and ultra-large-batch exponents, while a fixed-$D$ sweep shows the shift in the best batch size.
+4. **Blowup** runs stress-test the optimizers under an explicitly time-varying momentum schedule.
 
-The six-setting sweep uses $s\in\{0.3,0.5\}$ and
-$\beta\in\{2,4,6\}$. The fitted curves track both the oscillatory transient and
-the algebraic regime. The transition time follows
-$k_{\rm tr}\propto(1-\rho)^{-1}$, and Nesterov reaches a lower late-time noise
-floor.
+#### Scaling-law fits across six PLK settings
 
-### Blowup
+The $2\times3$ sweep uses $s\in\{0.3,0.5\}$ and $\beta\in\{2,4,6\}$. Pale curves show the empirical population loss and solid curves show the fitted theoretical total. The time dependence of the transient, signal, and noise terms is fixed by theory; only nonnegative $O(1)$ coefficients are fitted.
 
-Under the schedule $\rho_k=1-1/(k+1)$, Polyak eventually becomes unstable,
-whereas Nesterov remains stable over the saved 500,000-step horizon.
+The fits track both the oscillatory transient and the algebraic regime. For $s=0.5$, the late-time curves also expose Nesterov's lower noise floor increasingly clearly as $\beta$ grows.
 
-### Stability
+#### Time-domain transitions
 
-The stability scans recover
+The transition from the oscillatory transient to algebraic scaling occurs at $k_{\rm tr}\propto(1-\rho)^{-1}$. Nesterov enters the scaling regime slightly earlier and reaches its lower noise-dominated regime later than Polyak.
 
-$$
-\eta^{\rm crit}_{\rm Polyak}\asymp\min\{1,B(1-\rho)\}, \qquad
-\eta^{\rm crit}_{\rm Nesterov}\asymp\min\{1,B^\beta(1-\rho)\}.
-$$
+#### Data scaling across three batch-size regimes
 
-The two runnable stability notebooks use identical settings and intersect at
-$(B,1-\rho)=(16,2^{-8})$. They fit the same normalized coefficient against
-$B(1-\rho)$ for Polyak and $B^\beta(1-\rho)$ for Nesterov. Existing committed
-stability figures are older reference outputs; rerun both notebooks for the
-aligned comparison.
+For $(s,\beta)=(0.3,4)$, all three methods share the same small-batch exponent. Nesterov is fastest in the large-batch regime, while Polyak and Nesterov share the same exponent once the batch is ultra-large. In the large-batch run, the theoretical/measured exponents are $0.1772/0.1787$ for SGD, $0.2308/0.2321$ for Polyak, and $0.3039/0.3074$ for Nesterov.
 
-## Folder layout
+#### Fixed-budget batch size and momentum schedule
+
+At fixed $D=2^{14}$, Nesterov attains the lowest loss and shifts the best batch size upward. Under $\rho_k=1-1/(k+1)$, Polyak eventually becomes unstable, whereas Nesterov remains stable over the saved 500,000-step horizon.
+
+<a id="experiments"></a>
+
+## 🧪 Experiments
+
+The repository uses four scientific categories. Each category is a standalone
+folder containing its notebooks, reusable code, explanation, and saved results.
+
+| Category | What it measures | Notebook entry points | Reusable code |
+|---|---|---|---|
+| **Data scaling** | Endpoint loss across data budgets or batch-size regimes | [batch regimes](data_scaling/batch_regimes.ipynb), [critical batch size](data_scaling/critical_batch_size.ipynb) | [`data_scaling/experiment.py`](data_scaling/experiment.py) |
+| **Stability** | Largest stable learning rate | [versus batch size](stability/batch_size.ipynb), [versus momentum gap](stability/momentum_gap.ipynb) | [`stability/experiment.py`](stability/experiment.py) |
+| **Loss dynamics** | Loss as a function of optimization step in stable runs | [scaling-law fits](loss/scaling_law_fits.ipynb), [phase transitions](loss/phase_transitions.ipynb) | [`loss/experiment.py`](loss/experiment.py) |
+| **Blowup** | Failure under the time-varying schedule $\rho_k=1-1/(k+1)$ | [increasing momentum](blowup/increasing_momentum.ipynb) | [`blowup/experiment.py`](blowup/experiment.py) |
+
+Each folder has its own README. Committed numerical arrays and figures live
+under that folder's `results/` directory; new notebook runs write to its ignored
+`results/generated/` directory.
+
+### 1. Scaling
+
+Use scaling experiments when the horizontal axis is data budget $D$ or batch
+size $B$ and the quantity of interest is final or tail-averaged loss.
+
+- `batch_regimes.ipynb` compares the small-, large-, and ultra-large-batch exponents.
+- `critical_batch_size.ipynb` searches for the best $B$ at fixed $D=2^{14}$.
+- [`data_scaling/README.md`](data_scaling/README.md) explains the saved settings and results.
+
+### 2. Stability
+
+Use stability experiments when the output is a largest stable learning rate.
+
+- `batch_size.ipynb` sweeps $(B,\eta)$ at fixed $1-\rho=2^{-8}$.
+- `momentum_gap.ipynb` sweeps $(1-\rho,\eta)$ at fixed $B=16$.
+- Both notebooks share $(s,\beta)=(0.3,1.5)$, the same $\eta$ grid, run length,
+  stability rule, and seeds, and intersect at $(B,1-\rho)=(16,2^{-8})$.
+
+### 3. Loss dynamics
+
+Use loss dynamics for step-resolved curves at fixed $B$, $\eta$, and $\rho$.
+These experiments fit and visualize the transient, signal-learning, and
+noise-floor terms; they are not data-budget scaling experiments.
+
+See [`loss/README.md`](loss/README.md) for the two notebook entry points and
+their saved results.
+
+### 4. Blowup
+
+Blowup is a separate diagnostic because $\rho_k$ changes during training. The
+notebook compares SGD, Polyak, and Nesterov under the same increasing momentum
+schedule. See [`blowup/README.md`](blowup/README.md).
+
+<a id="getting-started"></a>
+
+## 🚀 Getting Started
+
+### Repository Structure
 
 ```text
 .
-├── data_scaling/   # notebooks, code, plotting tools, saved results
-├── loss/           # notebooks, code, saved results
-├── blowup/         # notebook, code, saved results
-├── stability/      # notebooks, code, plotting tools, saved results
-├── README.md
+├── data_scaling/               # notebooks, code, plotting tools, saved results
+├── loss/                       # notebooks, code, saved results
+├── blowup/                     # notebook, code, plotting helper, saved results
+├── stability/                  # notebooks, code, plotting tools, saved results
 ├── requirements.txt
-└── pyproject.toml
+├── pyproject.toml
+└── README.md
 ```
 
-Inside each experiment folder:
+Inside each experiment folder, `README.md` explains the scientific question,
+`*.ipynb` files are the readable experiment entry points, `experiment.py` and
+`core.py` contain reusable code, and `results/` contains committed outputs.
+The small amount of repeated core code keeps every experiment independently
+readable without tracing imports through another directory.
 
-- `README.md` explains the scientific question and the files to read;
-- `*.ipynb` files are the paper experiment entry points;
-- `experiment.py` contains the reusable experiment implementation;
-- `core.py` keeps that folder self-contained;
-- `results/` contains committed paper-scale outputs;
-- `results/generated/` is reserved for new runs and ignored by Git.
+### Installation
 
-The repeated `core.py` is intentional: a reader can copy or inspect any one
-experiment folder without tracing imports through another directory.
-
-## Running the notebooks
-
-Python 3.10 or later is required.
+Python 3.10 or later is required. Creating an isolated environment is recommended:
 
 ```bash
 python3 -m venv .venv
@@ -98,22 +230,57 @@ python -m pip install -r requirements.txt
 jupyter lab
 ```
 
-Launch Jupyter from the repository root and open one of the notebooks in the
-four folders. Each notebook writes generated files only inside its own folder.
-Set `PAPER_RUN=True` where available to use the paper-scale configuration; the
-default quick configuration is intended for checking the environment and code
-path.
+Launch Jupyter from the repository root so the relative result paths resolve
+correctly. For NVIDIA GPUs, install the PyTorch build matching the local CUDA
+version before launching the notebooks.
 
-## Reproducibility
+### Running the notebooks
 
-- CPU, CUDA, and Apple Silicon use the same PyTorch update rules.
-- Random seeds are explicit and deterministic.
-- Saved numerical arrays (`.npz`, `.json`, and `.csv`) live beside the figures
-  that use them.
-- PNG files provide quick previews; PDF files are the publication-quality
-  versions.
+Open any notebook in the four experiment folders and run it from top to bottom.
+Where a `PAPER_RUN` switch is available, `False` checks the code path quickly
+and `True` runs the quantitative setting. Generated JSON, NPZ, PNG, and PDF
+files stay inside that experiment's `results/generated/` directory.
 
-## Citation
+The original grids for eight stability settings are preserved under
+`stability/results/reference/stability_beta*_s*_reference.npz`. The plotting script keeps the
+original green/blue/orange algorithm colors, removes the background region fills,
+and includes prediction lines for SGD, Polyak, and Nesterov. To keep the legend
+compact, empirical markers are unlabeled and only the three prediction curves
+appear in the legend.
+
+Recreate one setting or all eight settings with:
+
+```bash
+python stability/plot_reference.py --beta 1.5 --s 2
+python stability/plot_reference.py --all
+```
+
+The available settings are $(\beta,s)=(1.5,2),(1.5,3),(1.5,5),(2,2),(2,3),
+(2,5),(2.5,3),(2.5,5)$. Generated PNG and PDF files are stored under
+`stability/results/reference/` using names such as `beta1_5s3_plot.png` and
+`beta1_5s3_plot.pdf`.
+
+### CPU, CUDA, and Apple Silicon
+
+The notebooks automatically select CUDA, then Apple MPS, then CPU. MPS uses
+`float32`; CPU and CUDA use `float64`. Paper-scale stability scans are best run
+on a CPU or CUDA GPU with double-precision support.
+
+### Reproducibility Notes
+
+- All random numbers are controlled by explicit notebook seeds.
+- Deterministic seed offsets are assigned to algorithms, experiment points, and independent repetitions.
+- CPU and GPU runs share the same mathematical implementation, although small floating-point differences may remain across hardware, BLAS, and CUDA versions.
+- The stability experiment uses fresh Gaussian mini-batches and computes gradients in chunks to limit memory use.
+- Following the paper appendix, the data-scaling experiment directly samples curvature-aligned Gaussian gradient noise.
+- Each run records its configuration, device, dtype, grids, and numerical summaries beside the generated figures.
+- Quick settings are smoke tests only; quantitative conclusions should use the notebook's paper-scale setting.
+
+<a id="citation"></a>
+
+## 📚 Citation
+
+If you use this code or build on these experiments, please cite:
 
 ```bibtex
 @misc{wang2026momentumlargebatch,
