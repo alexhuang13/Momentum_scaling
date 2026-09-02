@@ -25,6 +25,10 @@ where $\beta>1$ is the capacity exponent and $s>0$ is the source exponent. Small
 
 Our analysis connects mean-square stability with data scaling under a fixed budget $D=BK$, where $B$ is the batch size and $K$ is the number of optimization steps. It shows that Polyak momentum mainly enlarges the useful batch-size range, whereas Nesterov momentum can improve the optimal data-scaling exponent through curvature-dependent damping of stochastic noise.
 
+<p align="center">
+  <a href="data_scaling/results/overview/intro_figure.pdf"><img src="data_scaling/results/overview/intro_figure.png" alt="Theory and simulation of data-scaling regimes" width="800"></a>
+</p>
+
 This repository contains self-contained PyTorch implementations of the numerical
 experiments. The notebooks share the same update rules and automatically select
 CUDA, Apple Silicon, or CPU.
@@ -59,6 +63,10 @@ CUDA, Apple Silicon, or CPU.
 </table>
 
 Nesterov's look-ahead correction makes its stable region grow faster with batch size, allowing it to reach the deterministic stability ceiling earlier than Polyak momentum.
+
+| Stability versus batch size | Stability versus momentum damping |
+|---|---|
+| <a href="stability/results/overview/batch_size_boundary.pdf"><img src="stability/results/overview/batch_size_boundary.png" alt="Critical learning rates versus batch size" width="390"></a> | <a href="stability/results/momentum_gap/momentum_gap.pdf"><img src="stability/results/momentum_gap/momentum_gap.png" alt="Critical learning rates versus momentum damping" width="390"></a> |
 
 ### 2. Excess-Risk Scaling Laws
 
@@ -114,13 +122,9 @@ In the presence of label noise:
 - Polyak momentum achieves the same optimal rate but preserves it over a substantially larger range of batch sizes.
 - Nesterov momentum achieves the faster rate $D^{-2s\beta/(2s\beta+\beta+1)+o(1)}$.
 
-<p align="center">
-  <a href="data_scaling/results/overview/intro_figure.pdf"><img src="data_scaling/results/overview/intro_figure.png" alt="Theory and simulation of data-scaling regimes" width="800"></a>
-</p>
-
-| Stability versus batch size | Stability versus momentum damping |
-|---|---|
-| <a href="stability/results/overview/batch_size_boundary.pdf"><img src="stability/results/overview/batch_size_boundary.png" alt="Critical learning rates versus batch size" width="390"></a> | <a href="stability/results/momentum_gap/momentum_gap.pdf"><img src="stability/results/momentum_gap/momentum_gap.png" alt="Critical learning rates versus momentum damping" width="390"></a> |
+| Small batch | Large batch | Ultra-large batch |
+|---|---|---|
+| <a href="data_scaling/results/batch_regimes/s0.3beta4/small_batch.pdf"><img src="data_scaling/results/batch_regimes/s0.3beta4/small_batch.png" alt="Small-batch data scaling" width="270"></a> | <a href="data_scaling/results/batch_regimes/s0.3beta4/large_batch.pdf"><img src="data_scaling/results/batch_regimes/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="270"></a> | <a href="data_scaling/results/batch_regimes/s0.3beta4/super_large_batch.pdf"><img src="data_scaling/results/batch_regimes/s0.3beta4/super_large_batch.png" alt="Ultra-large-batch data scaling" width="270"></a> |
 
 ### Key Numerical Results
 
@@ -145,9 +149,17 @@ The transition from the oscillatory transient to algebraic scaling occurs at $k_
 
 For $(s,\beta)=(0.3,4)$, all three methods share the same small-batch exponent. Nesterov is fastest in the large-batch regime, while Polyak and Nesterov share the same exponent once the batch is ultra-large. In the large-batch run, the theoretical/measured exponents are $0.1772/0.1787$ for SGD, $0.2308/0.2321$ for Polyak, and $0.3039/0.3074$ for Nesterov.
 
-#### Fixed-budget batch size and momentum schedule
+#### Fixed-budget batch size
 
-At fixed $D=2^{14}$, Nesterov attains the lowest loss and shifts the best batch size upward. Under $\rho_k=1-1/(k+1)$, Polyak eventually becomes unstable, whereas Nesterov remains stable over the saved 500,000-step horizon.
+At fixed $D=2^{14}$, Nesterov attains the lowest loss and shifts the best batch size upward.
+
+#### Increasing-momentum blowup
+
+<p align="center">
+  <a href="blowup/results/blowup_time.pdf"><img src="blowup/results/blowup_time.png" alt="Loss under an increasingly aggressive momentum schedule" width="440"></a>
+</p>
+
+Under $\rho_k=1-1/(k+1)$, Polyak eventually becomes unstable, whereas Nesterov remains stable over the saved 500,000-step horizon.
 
 <a id="experiments"></a>
 
