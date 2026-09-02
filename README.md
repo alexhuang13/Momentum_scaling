@@ -22,9 +22,9 @@ $$
 | [`blowup/`](blowup/) | What happens under increasing momentum? | [`increasing_momentum.ipynb`](blowup/increasing_momentum.ipynb) | Polyak eventually diverges while Nesterov remains stable over the saved horizon. |
 | [`stability/`](stability/) | Which learning rates remain stable? | [`batch_size.ipynb`](stability/batch_size.ipynb), [`momentum_gap.ipynb`](stability/momentum_gap.ipynb) | The aligned scans test the two normalized stability laws with a shared cross-point. |
 
-| Data scaling | Loss | Blowup | Stability |
-|---|---|---|---|
-| <a href="data_scaling/results/batch_regimes/s0.3beta4/large_batch.pdf"><img src="data_scaling/results/batch_regimes/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="220"></a> | <a href="loss/results/scaling_law_fits/scaling_law_fits_2x3.pdf"><img src="loss/results/scaling_law_fits/scaling_law_fits_2x3.png" alt="Loss scaling-law fits" width="220"></a> | <a href="blowup/results/blowup_time.pdf"><img src="blowup/results/blowup_time.png" alt="Increasing-momentum blowup" width="220"></a> | <a href="stability/results/batch_size_schematic/stability_boundary.pdf"><img src="stability/results/batch_size_schematic/stability_boundary.png" alt="Stability boundary" width="220"></a> |
+| Data scaling | Blowup | Stability |
+|---|---|---|
+| <a href="data_scaling/results/batch_regimes/s0.3beta4/large_batch.pdf"><img src="data_scaling/results/batch_regimes/s0.3beta4/large_batch.png" alt="Large-batch data scaling" width="260"></a> | <a href="blowup/results/blowup_time.pdf"><img src="blowup/results/blowup_time.png" alt="Increasing-momentum blowup" width="260"></a> | <a href="stability/results/batch_size_schematic/stability_boundary.pdf"><img src="stability/results/batch_size_schematic/stability_boundary.png" alt="Stability boundary" width="260"></a> |
 
 ### Data scaling
 
