@@ -114,9 +114,13 @@ In the presence of label noise:
 - Polyak momentum achieves the same optimal rate but preserves it over a substantially larger range of batch sizes.
 - Nesterov momentum achieves the faster rate $D^{-2s\beta/(2s\beta+\beta+1)+o(1)}$.
 
-| Theoretical stability boundary | Data-scaling phase diagram | Critical batch size |
-|---|---|---|
-| <a href="stability/results/overview/polyak_nesterov_sgd_boundary_schematic.pdf"><img src="stability/results/overview/polyak_nesterov_sgd_boundary_schematic.png" alt="Stability boundary schematic" width="300"></a> | <a href="data_scaling/results/overview/rate_diagram.pdf"><img src="data_scaling/results/overview/rate_diagram.png" alt="Data-scaling phase diagram" width="300"></a> | <a href="data_scaling/results/overview/cbs.pdf"><img src="data_scaling/results/overview/cbs.png" alt="Batch-size sweep" width="300"></a> |
+<p align="center">
+  <a href="data_scaling/results/overview/intro_figure.pdf"><img src="data_scaling/results/overview/intro_figure.png" alt="Theory and simulation of data-scaling regimes" width="800"></a>
+</p>
+
+| Stability versus batch size | Stability versus momentum damping |
+|---|---|
+| <a href="stability/results/overview/batch_size_boundary.pdf"><img src="stability/results/overview/batch_size_boundary.png" alt="Critical learning rates versus batch size" width="390"></a> | <a href="stability/results/momentum_gap/momentum_gap.pdf"><img src="stability/results/momentum_gap/momentum_gap.png" alt="Critical learning rates versus momentum damping" width="390"></a> |
 
 ### Key Numerical Results
 
