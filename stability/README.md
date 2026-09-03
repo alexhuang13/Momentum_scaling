@@ -5,18 +5,34 @@ training runs.
 
 | File | What to read or run |
 |---|---|
-| [`batch_size.ipynb`](batch_size.ipynb) | Sweep $B=2^2,\ldots,2^{10}$ at fixed $1-\rho=2^{-8}$ |
-| [`momentum_gap.ipynb`](momentum_gap.ipynb) | Sweep $1-\rho=2^{-8},\ldots,2^{-3.5}$ at fixed $B=16$ |
+| [`batch_size.ipynb`](batch_size.ipynb) | Sweep $B=2^0,\ldots,2^8$ at fixed $1-\rho=2^{-6}$ |
+| [`momentum_gap.ipynb`](momentum_gap.ipynb) | Sweep $1-\rho=2^{-6},\ldots,2^{-1.5}$ at fixed $B=4$ |
 | [`experiment.py`](experiment.py) | Reusable stability scan implementation |
 | [`core.py`](core.py) | Model, optimizer updates, and shared numerical utilities |
-| [`plot_reference.py`](plot_reference.py) | Render the eight saved reference grids |
-| [`plot_schematic.py`](plot_schematic.py) | Recreate the theoretical boundary schematic |
 
-The two notebooks now use the same $(s,\beta)=(0.3,1.5)$ problem, dimension,
+## Results
+
+| Stability versus batch size | Stability versus momentum damping |
+|---|---|
+| <a href="results/overview/batch_size_boundary.pdf"><img src="results/overview/batch_size_boundary.png" alt="Critical learning rates versus batch size" width="390"></a> | <a href="results/momentum_gap/momentum_gap.pdf"><img src="results/momentum_gap/momentum_gap.png" alt="Critical learning rates versus momentum damping" width="390"></a> |
+
+The two notebooks use the same $(s,\beta)=(0.3,1.5)$ problem, dimension,
 $\eta$ grid, 2,000-step horizon, stability rule, five seeds, and device policy.
-Their grids intersect at $(B,1-\rho)=(16,2^{-8})$, where the seed mapping is
+Their grids intersect at $(B,1-\rho)=(4,2^{-6})$, where the seed mapping is
 also identical. This gives a direct numerical consistency check between the
 two scans.
+
+Every quantitative point satisfies
+
+$$
+K(1-\rho)\geq 2000\,2^{-6}=31.25.
+$$
+
+This guard is essential. If $K(1-\rho)\ll1$, a run only measures whether the
+optimizer survives for $K$ steps. The apparent boundaries then scale as
+$B/K$ for Polyak and $B^\beta/K$ for Nesterov. Fitting those data to the
+asymptotic formulas creates a spurious prefactor of order
+$1/[K(1-\rho)]$.
 
 Both notebooks fit the same one-kink model after normalizing the horizontal
 variable:
@@ -27,10 +43,10 @@ x_{\rm Polyak}=B(1-\rho),\quad
 x_{\rm Nesterov}=B^\beta(1-\rho).
 $$
 
-The fitted $c$ is therefore comparable across notebooks. A coefficient fitted
-directly against $1-\rho$ is larger by $B$ for Polyak and by $B^\beta$ for
-Nesterov; it is not a different theoretical constant. More explicitly, if
-$g_0=2^{-8}$ and $B_0=16$, the unnormalized slopes obey
+The fitted, dimensionless $c$ is therefore comparable across notebooks. Raw
+slopes against $B$ or $1-\rho$ depend on the fixed value of the other variable
+and are not compared as theoretical constants. More explicitly, if $g_0$ and
+$B_0$ denote the fixed values in the two scans, then
 
 $$
 c_{B,\rm Polyak}=cg_0,\quad c_{g,\rm Polyak}=cB_0,
@@ -39,14 +55,15 @@ c_{B^\beta,\rm Nesterov}=cg_0,\quad
 c_{g,\rm Nesterov}=cB_0^\beta.
 $$
 
-So the two raw slopes are expected to differ by $B_0/g_0=4096$ for Polyak
-and by $B_0^\beta/g_0=16384$ for Nesterov. The normalized $c$, not either raw
-slope, is the cross-experiment quantity.
+The normalized $c$, not either raw slope, is the cross-experiment quantity.
 
-Saved paper-scale outputs and older reference arrays are under
-[`results/`](results/). They predate this cross-design and should not be used
-to compare the two fitted constants directly. New aligned runs write to
-`stability/results/generated/aligned/`, which is ignored by Git.
+Both notebooks are safe to resume on a preemptible GPU instance. The batch
+scan checkpoints after every `(algorithm, B)` block, while the momentum-gap
+scan checkpoints after every `(algorithm, 1-rho)` block. Checkpoint replacement
+is atomic, and rerunning the notebook skips completed blocks.
+
+New caches write to `results/generated/aligned/`. Running the notebooks writes
+the canonical figures to `results/overview/` and `results/momentum_gap/`.
 
 Main result: the scans recover
 $\eta^{\rm crit}_{\rm Polyak}\asymp\min\{1,B(1-\rho)\}$ and

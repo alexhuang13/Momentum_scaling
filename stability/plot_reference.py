@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Plot the reference stability scans with colored curves and no background fills."""
+"""Plot legacy finite-horizon scans for provenance only.
+
+These arrays used K(1-rho) << 1 and must not be treated as asymptotic
+stability experiments.  Run ``batch_size.ipynb`` for the corrected scan.
+"""
 
 from __future__ import annotations
 
@@ -96,6 +100,11 @@ def plot(data_path: Path, output_stem: Path) -> None:
         eta_grid = np.asarray(data["eta_grid"], dtype=float)
         beta = float(data["beta"])
         one_minus_rho = float(data["one_minus_rho"])
+
+    print(
+        "warning: plotting a legacy finite-horizon scan; "
+        "do not use it as asymptotic stability evidence"
+    )
 
     if algorithms != ALGORITHMS:
         raise ValueError(f"expected algorithms {ALGORITHMS}, got {algorithms}")
@@ -204,6 +213,7 @@ def plot(data_path: Path, output_stem: Path) -> None:
     ax.set_ylim(float(eta_grid.min()), float(eta_grid.max()))
     ax.set_xlabel(r"Batch Size  $B$")
     ax.set_ylabel(r"Stability Boundary  $\eta$")
+    ax.set_title("Legacy finite-horizon scan")
     ax.grid(False)
     ax.legend(loc="lower right", handlelength=2.8)
 

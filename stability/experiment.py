@@ -106,11 +106,14 @@ def run_stability_trial(
 def stability_experiment(runtime: StabilityRuntime, *, quick: bool) -> dict:
     config = {
         "beta": 1.5,
-        "s": 2.0,
+        "s": 0.3,
         "sigma": 0.0,
         "dim": 256 if quick else 4096,
-        "one_minus_rho": 2.0**-12 if quick else 2.0**-24,
-        "batch_sizes": [1, 2, 4, 8] if quick else [2**i for i in range(13)],
+        # Quantitative runs must resolve momentum damping.  The former paper
+        # preset used 2**-24 with only 2,000 steps, so K(1-rho) << 1 and the
+        # measured boundary was a finite-horizon B/K artifact.
+        "one_minus_rho": 2.0**-4 if quick else 2.0**-6,
+        "batch_sizes": [1, 2, 4, 8] if quick else [2**i for i in range(9)],
         "eta_grid": (
             np.geomspace(2**-8, 2.0, 8).tolist()
             if quick
@@ -122,7 +125,16 @@ def stability_experiment(runtime: StabilityRuntime, *, quick: bool) -> dict:
         "divergence_loss": 1e12,
         "seeds": 2 if quick else 5,
         "chunk": 256 if quick else 2048,
+        "minimum_damping_times": 0.0 if quick else 30.0,
     }
+    damping_times = config["steps"] * config["one_minus_rho"]
+    config["damping_times"] = damping_times
+    if damping_times < config["minimum_damping_times"]:
+        raise ValueError(
+            "Stability preset does not resolve momentum damping: "
+            f"K(1-rho)={damping_times:.6g} < "
+            f"{config['minimum_damping_times']:.6g}."
+        )
     problem = build_problem(
         beta=config["beta"],
         s=config["s"],

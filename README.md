@@ -68,6 +68,9 @@ Nesterov's look-ahead correction makes its stable region grow faster with batch 
 |---|---|
 | <a href="stability/results/overview/batch_size_boundary.pdf"><img src="stability/results/overview/batch_size_boundary.png" alt="Critical learning rates versus batch size" width="390"></a> | <a href="stability/results/momentum_gap/momentum_gap.pdf"><img src="stability/results/momentum_gap/momentum_gap.png" alt="Critical learning rates versus momentum damping" width="390"></a> |
 
+The batch-size and momentum-damping sweeps are the canonical stability results
+for this repository. Their PDF versions are linked from the displayed figures.
+
 ### 2. Excess-Risk Scaling Laws
 
 The expected excess risk admits a signal-learning and noise-accumulation decomposition:
@@ -192,10 +195,12 @@ size $B$ and the quantity of interest is final or tail-averaged loss.
 
 Use stability experiments when the output is a largest stable learning rate.
 
-- `batch_size.ipynb` sweeps $(B,\eta)$ at fixed $1-\rho=2^{-8}$.
-- `momentum_gap.ipynb` sweeps $(1-\rho,\eta)$ at fixed $B=16$.
+- `batch_size.ipynb` sweeps $B=2^0,\ldots,2^8$ at fixed $1-\rho=2^{-6}$.
+- `momentum_gap.ipynb` sweeps $1-\rho=2^{-6},\ldots,2^{-1.5}$ at fixed $B=4$.
 - Both notebooks share $(s,\beta)=(0.3,1.5)$, the same $\eta$ grid, run length,
-  stability rule, and seeds, and intersect at $(B,1-\rho)=(16,2^{-8})$.
+  stability rule, and seeds, and intersect at $(B,1-\rho)=(4,2^{-6})$.
+- All quantitative points satisfy $K(1-\rho)\geq30$; the notebooks stop with
+  an error if a future setting violates this finite-horizon guard.
 
 ### 3. Loss dynamics
 
@@ -255,26 +260,9 @@ version before launching the notebooks.
 Open any notebook in the four experiment folders and run it from top to bottom.
 Where a `PAPER_RUN` switch is available, `False` checks the code path quickly
 and `True` runs the quantitative setting. Generated JSON, NPZ, PNG, and PDF
-files stay inside that experiment's `results/generated/` directory.
-
-The original grids for eight stability settings are preserved under
-`stability/results/reference/stability_beta*_s*_reference.npz`. The plotting script keeps the
-original green/blue/orange algorithm colors, removes the background region fills,
-and includes prediction lines for SGD, Polyak, and Nesterov. To keep the legend
-compact, empirical markers are unlabeled and only the three prediction curves
-appear in the legend.
-
-Recreate one setting or all eight settings with:
-
-```bash
-python stability/plot_reference.py --beta 1.5 --s 2
-python stability/plot_reference.py --all
-```
-
-The available settings are $(\beta,s)=(1.5,2),(1.5,3),(1.5,5),(2,2),(2,3),
-(2,5),(2.5,3),(2.5,5)$. Generated PNG and PDF files are stored under
-`stability/results/reference/` using names such as `beta1_5s3_plot.png` and
-`beta1_5s3_plot.pdf`.
+files stay inside that experiment folder. Stability caches stay under
+`results/generated/`, while the two validated figures overwrite the canonical
+paths used above.
 
 ### CPU, CUDA, and Apple Silicon
 
