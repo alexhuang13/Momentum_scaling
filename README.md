@@ -289,10 +289,13 @@ on a CPU or CUDA GPU with double-precision support.
 If you use this code or build on these experiments, please cite:
 
 ```bibtex
-@misc{wang2026momentumlargebatch,
-  title = {Momentum in Large-Batch Training: Polyak Enlarges the Critical Batch Size, Nesterov Improves Data Efficiency},
-  author = {Wang, Jia-Nan and Huang, Zixun and Li, Kairui and Wu, Lei},
-  year = {2026},
-  note = {Manuscript}
+@misc{wang2026momentumlargebatchtrainingpolyak,
+  title={Momentum in large-batch training: Polyak enlarges the critical batch size, Nesterov improves data efficiency},
+  author={Jia-Nan Wang and Zixun Huang and Kairui Li and Lei Wu},
+  year={2026},
+  eprint={2609.02728},
+  archivePrefix={arXiv},
+  primaryClass={stat.ML},
+  url={https://arxiv.org/abs/2609.02728},
 }
 ```
