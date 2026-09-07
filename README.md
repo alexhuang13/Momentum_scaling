@@ -2,7 +2,7 @@
 
 # Momentum in Large-Batch Training: Polyak Enlarges the Critical Batch Size, Nesterov Improves Data Efficiency
 
-[![Paper](https://img.shields.io/badge/paper-A42C25?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/pdf/2609.02728) [![Blog](https://img.shields.io/badge/Blog-2563EB?style=for-the-badge)](https://alexhuang13.github.io/momentum_blog/index.html) [![GitHub](https://img.shields.io/badge/GitHub-000000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/alexhuang13/Momentum_scaling)
+[![Paper](https://img.shields.io/badge/paper-A42C25?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/pdf/2609.02728) [![GitHub](https://img.shields.io/badge/GitHub-000000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/alexhuang13/Momentum_scaling) [![Blog](https://img.shields.io/badge/blog-2563EB?style=for-the-badge&logo=githubpages&logoColor=white)](https://alexhuang13.github.io/momentum_blog/index.html)
 
 [📖 Introduction](#introduction) · [📊 Main Results](#main-results) · [🧪 Experiments](#experiments) · [🚀 Getting Started](#getting-started) · [📚 Citation](#citation)
 
