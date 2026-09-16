@@ -197,6 +197,14 @@ size $B$ and the quantity of interest is final or tail-averaged loss.
 
 Use stability experiments when the output is a largest stable learning rate.
 
+An additional [neural-network stability experiment](momentum_nn/README.md)
+scans ImageNet / ResNet-18 at a fixed update horizon, with explicit finite-time
+criteria, per-seed results, and censored learning-rate boundaries.
+Its [interactive notebook](momentum_nn/stability.ipynb) includes a FakeData smoke
+test, ImageNet pilot and full presets, resumable trials, and inline diagnostics.
+For AutoDL, the [standalone Python folder](autodl_stability/README.md) includes
+setup and launch scripts and exports stability tables and figures directly.
+
 - `batch_size.ipynb` sweeps $B=2^0,\ldots,2^8$ at fixed $1-\rho=2^{-6}$.
 - `momentum_gap.ipynb` sweeps $1-\rho=2^{-6},\ldots,2^{-1.5}$ at fixed $B=4$.
 - Both notebooks share $(s,\beta)=(0.3,1.5)$, the same $\eta$ grid, run length,

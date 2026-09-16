@@ -15,6 +15,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+nn = [
+  "torchvision>=0.16",
+]
 notebooks = [
   "jupyterlab>=4.0",
   "pandas>=2.0",
@@ -25,7 +28,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["data_scaling", "loss", "blowup", "stability"]
+include = ["data_scaling", "loss", "blowup", "stability", "momentum_nn"]
 
 [tool.black]
 line-length = 88

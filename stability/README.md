@@ -3,6 +3,11 @@
 This folder estimates the largest stable learning rate from bounded/divergent
 training runs.
 
+For a finite-horizon ImageNet / ResNet extension using the same optimizer
+recurrences and damping-time guard, see
+[`momentum_nn/README.md`](../momentum_nn/README.md). Its empirical NN criterion
+is defined separately from the kernel model's population excess-risk test.
+
 | File | What to read or run |
 |---|---|
 | [`batch_size.ipynb`](batch_size.ipynb) | Sweep $B=2^0,\ldots,2^8$ at fixed $1-\rho=2^{-6}$ |
