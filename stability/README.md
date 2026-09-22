@@ -17,9 +17,9 @@ is defined separately from the kernel model's population excess-risk test.
 
 ## Results
 
-| Stability versus batch size | Stability versus momentum damping |
+| Stability versus batch size | Stability versus momentum damping $1-\beta$ |
 |---|---|
-| <a href="results/overview/batch_size_boundary.pdf"><img src="results/overview/batch_size_boundary.png" alt="Critical learning rates versus batch size" width="390"></a> | <a href="results/momentum_gap/momentum_gap.pdf"><img src="results/momentum_gap/momentum_gap.png" alt="Critical learning rates versus momentum damping" width="390"></a> |
+| <a href="results/overview/batch_size_boundary.pdf"><img src="results/overview/batch_size_boundary.png" alt="Critical learning rates versus batch size" width="390"></a> | <a href="results/momentum_gap/momentum_gap.pdf"><img src="results/momentum_gap/momentum_gap.png" alt="Critical learning rates versus momentum damping 1−β" width="390"></a> |
 
 The two notebooks use the same $(s,\beta)=(0.3,1.5)$ problem, dimension,
 $\eta$ grid, 2,000-step horizon, stability rule, five seeds, and device policy.

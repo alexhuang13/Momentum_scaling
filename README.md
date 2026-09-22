@@ -66,9 +66,9 @@ CUDA, Apple Silicon, or CPU.
 
 Nesterov's look-ahead correction makes its stable region grow faster with batch size, allowing it to reach the deterministic stability ceiling earlier than Polyak momentum.
 
-| Stability versus batch size | Stability versus momentum damping |
+| Stability versus batch size | Stability versus momentum damping $1-\beta$ |
 |---|---|
-| <a href="stability/results/overview/batch_size_boundary.pdf"><img src="stability/results/overview/batch_size_boundary.png" alt="Critical learning rates versus batch size" width="390"></a> | <a href="stability/results/momentum_gap/momentum_gap.pdf"><img src="stability/results/momentum_gap/momentum_gap.png" alt="Critical learning rates versus momentum damping" width="390"></a> |
+| <a href="stability/results/overview/batch_size_boundary.pdf"><img src="stability/results/overview/batch_size_boundary.png" alt="Critical learning rates versus batch size" width="390"></a> | <a href="stability/results/momentum_gap/momentum_gap.pdf"><img src="stability/results/momentum_gap/momentum_gap.png" alt="Critical learning rates versus momentum damping 1−β" width="390"></a> |
 
 The batch-size and momentum-damping sweeps are the canonical stability results
 for this repository. Their PDF versions are linked from the displayed figures.
