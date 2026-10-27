@@ -1,0 +1,7 @@
+outputs/
+data/
+source/output/
+source/results/
+*.log
+*.pid
+*.lock

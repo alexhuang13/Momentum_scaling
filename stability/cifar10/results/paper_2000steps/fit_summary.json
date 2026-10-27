@@ -1,0 +1,80 @@
+{
+  "source": "/home/jnwang/momentum/cifar10_stability/output/nesterov_followup_20260921",
+  "merge": {
+    "baseline_sha256": "9a04e637f3dc1bf38d08ad531cc174cd3ea8b306ffbd22b5b4cd1e34a1c47c25",
+    "new_trials": 250,
+    "new_stable": 144,
+    "new_unstable": 106,
+    "changed_cells": 25,
+    "policy": "append disjoint seeds; retain all prior outcomes"
+  },
+  "excluded_gap": 0.0078125,
+  "excluded_cells": 0,
+  "retained_cells": 1309,
+  "stable_fraction": 0.5,
+  "retained_horizon": 2000,
+  "fits": [
+    {
+      "algorithm": "sgd",
+      "A": null,
+      "C": 2.9392443086137447,
+      "beta": 0.0,
+      "n_unique_points": 9,
+      "log_rmse": 0.3058536154848036,
+      "cap_observed": true,
+      "beta_at_search_bound": false,
+      "form": "batch: min(batch_A*B,batch_C); gap: C (unchanged)",
+      "batch_A": 1.3252367928410933,
+      "batch_C": 3.3425047240070533,
+      "batch_transition": 2.5221943293932125,
+      "batch_log_rmse": 0.13787701503444275
+    },
+    {
+      "algorithm": "polyak",
+      "A": 7.786522012188,
+      "C": 2.600711157362782,
+      "beta": 1.0,
+      "n_unique_points": 17,
+      "log_rmse": 0.11094702538068303,
+      "cap_observed": true,
+      "beta_at_search_bound": false,
+      "form": "min(C,A*B**beta*gap)",
+      "batch_A": null,
+      "batch_C": null,
+      "batch_transition": null,
+      "batch_log_rmse": null
+    },
+    {
+      "algorithm": "nesterov",
+      "A": 23.94240351700951,
+      "C": 1.6837075928314127,
+      "beta": 0.4821,
+      "n_unique_points": 17,
+      "log_rmse": 0.13844457258144321,
+      "cap_observed": true,
+      "beta_at_search_bound": false,
+      "form": "min(C,A*B**beta*gap)",
+      "batch_A": null,
+      "batch_C": null,
+      "batch_transition": null,
+      "batch_log_rmse": null
+    }
+  ],
+  "fit_definition": "Equal-weight log-boundary least squares; Polyak/Nesterov shared across scans; SGD batch growth at B=1,2 then plateau, SGD gap unchanged",
+  "boundary_definition": "Seed-count-weighted decreasing isotonic proportions; log-LR crossing",
+  "source_heatmap_changed": false,
+  "raw_data_deleted": false,
+  "display": {
+    "gap_ymin": 0.0625,
+    "boundary_ymin": 0.0625,
+    "colormap": "stability_yellow",
+    "normalization": "linear 0..1",
+    "fitted_line_dependent_recoloring": false
+  },
+  "note": "Isotonic adjustment is only for extracting the empirical boundary, not heatmap colors",
+  "beta_search_range": [
+    0.05,
+    4.0
+  ],
+  "code_sha256": "0811c59d5f533a8731cbd17d85b8c471f39ef18830f9ec4ca4e9431981092638"
+}

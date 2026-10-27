@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "momentum-scaling"
 version = "0.2.0"
-description = "Four readable experiment groups for stochastic momentum scaling laws"
+description = "Kernel and neural-network experiments for momentum scaling laws"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -17,6 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 nn = [
   "torchvision>=0.16",
+  "pandas>=2.0",
 ]
 notebooks = [
   "jupyterlab>=4.0",
@@ -33,3 +34,4 @@ include = ["data_scaling", "loss", "blowup", "stability", "momentum_nn"]
 [tool.black]
 line-length = 88
 target-version = ["py310"]
+

@@ -1,0 +1,4 @@
+algorithm,A,C,beta,n_unique_points,log_rmse,cap_observed,beta_at_search_bound,form,batch_A,batch_C,batch_transition,batch_log_rmse
+sgd,,2.9392443086137447,0.0,9,0.3058536154848036,True,False,"batch: min(batch_A*B,batch_C); gap: C (unchanged)",1.3252367928410933,3.3425047240070533,2.5221943293932125,0.13787701503444275
+polyak,7.786522012188,2.600711157362782,1.0,17,0.11094702538068303,True,False,"min(C,A*B**beta*gap)",,,,
+nesterov,23.94240351700951,1.6837075928314127,0.4821,17,0.13844457258144321,True,False,"min(C,A*B**beta*gap)",,,,

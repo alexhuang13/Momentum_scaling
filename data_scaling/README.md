@@ -1,7 +1,8 @@
 # Data scaling
 
-This folder contains everything for endpoint-loss scaling across data budgets
-and batch-size regimes.
+This folder groups endpoint-loss scaling across data budgets and batch sizes.
+The notebooks below study the kernel model; [ImageNet / ResNet-18](imagenet/README.md)
+adds the fixed-sample-budget neural-network experiment with 396 archived runs.
 
 | File | What to read or run |
 |---|---|
@@ -17,3 +18,4 @@ write to `data_scaling/results/generated/`, which is ignored by Git.
 
 Main result: Nesterov has the fastest large-batch exponent. At fixed
 $D=2^{14}$ it also reaches the lowest loss and shifts the best batch size upward.
+

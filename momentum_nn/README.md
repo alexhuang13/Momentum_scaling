@@ -1,5 +1,10 @@
 # 神经网络上的 momentum stability 实验
 
+> 这是较早的 ImageNet stability notebook，保留其独立协议与原实现。
+> 新增的论文实验入口：[ImageNet 固定样本预算](../data_scaling/imagenet/README.md)
+> 与 [CIFAR-10 稳定性](../stability/cifar10/README.md)。
+> 下文历史记录提到的 `autodl_stability/` 未包含在当前仓库中。
+
 本实验研究：在相同初始化、数据抽样、固定训练步数下，SGD、Polyak、Nesterov
 允许的学习率范围如何随 batch size 和 momentum gap 改变。
 
@@ -90,7 +95,7 @@ probe CE > 100 L0、gradient norm > 10^6、parameter norm > 100 × 初始 norm
 
 ## 运行
 
-AutoDL 上直接运行 Python：[独立文件夹 `autodl_stability/`](../autodl_stability/README.md)。
+AutoDL 上直接运行 Python：独立文件夹 `autodl_stability/`（历史目录，当前仓库未收录）。
 它包含启动脚本、安装脚本和完整训练/绘图依赖，无需 notebook 或其他仓库目录。
 进入该文件夹后执行 `bash run_all.sh`，即可完成 Kaggle 数据下载、两轴原扫描和绘图；
 需要预先上传自己的 Kaggle 凭证并在网页接受比赛规则，详见独立文件夹说明。
@@ -217,3 +222,4 @@ python -m momentum_nn.stability_experiment summarize \
   worker、B=3 / micro-batch=2 的余数累积，以及有限 loss 停止阈值。
 
 这些检查只验证代码路径。**尚未运行真实 ImageNet 扫描，也没有 NN stability 的科学结论。**
+

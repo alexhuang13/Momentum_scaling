@@ -3,6 +3,10 @@
 This folder estimates the largest stable learning rate from bounded/divergent
 training runs.
 
+For the archived neural-network experiment, start with
+[CIFAR-10 / ResNet-18](cifar10/README.md): fixed 2,000-update scans, aggregate
+stability counts, and reproducible boundary extraction and plotting.
+
 For a finite-horizon ImageNet / ResNet extension using the same optimizer
 recurrences and damping-time guard, see
 [`momentum_nn/README.md`](../momentum_nn/README.md). Its empirical NN criterion
@@ -73,3 +77,4 @@ the canonical figures to `results/overview/` and `results/momentum_gap/`.
 Main result: the scans recover
 $\eta^{\rm crit}_{\rm Polyak}\asymp\min\{1,B(1-\rho)\}$ and
 $\eta^{\rm crit}_{\rm Nesterov}\asymp\min\{1,B^\beta(1-\rho)\}$.
+
