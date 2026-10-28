@@ -36,7 +36,7 @@ to constant factors; the theory assumes constant-order label noise $`\sigma\eqsi
 
 Our analysis follows the paper's sequence: **risk stability → risk dynamics →
 optimal data scaling**. We first identify the admissible hyperparameter set
-$`\mathcal{A}_B`$, then characterize the expected excess risk within that set,
+$`𝒜_B`$, then characterize the expected excess risk within that set,
 and finally optimize the final-step risk subject to $`N=D/B`$. Polyak enlarges
 the critical batch size while preserving the best small-batch exponent;
 Nesterov's curvature-adaptive damping improves the exponent in the large-batch regime.
@@ -65,7 +65,7 @@ Risk stability means that the expected population risk remains bounded for
 every admissible initialization with finite population risk:
 
 ```math
-\sup_{k\geq0}\mathbb{E}[\mathcal{R}(\boldsymbol{\theta}_k)]<\infty.
+\sup_{k\geq0}𝔼[ℛ(\boldsymbol{\theta}_k)]<\infty.
 ```
 
 Theorem 4.3 gives the following critical-learning-rate scalings for sufficiently
@@ -111,28 +111,28 @@ for this repository. Their PDF versions are linked from the displayed figures.
 ### 2. Excess-Risk Scaling Laws
 
 Following Section 3.1 of the paper, distinguish the population risk
-$`\mathcal{R}`$ from the excess risk $`\mathcal{E}`$:
+$`ℛ`$ from the excess risk $`ℰ`$:
 
 ```math
 \begin{aligned}
-\mathcal{R}(\boldsymbol{\theta})
-&=\frac{1}{2}\mathbb{E}_{x,y}\left[(f(x;\boldsymbol{\theta})-y)^2\right],\\
-\mathcal{E}(\boldsymbol{\theta})
+ℛ(\boldsymbol{\theta})
+&=\frac{1}{2}𝔼_{x,y}\left[(f(x;\boldsymbol{\theta})-y)^2\right],\\
+ℰ(\boldsymbol{\theta})
 &=\frac{1}{2}\left\langle\boldsymbol{\theta}-\boldsymbol{\theta}^{*},
 \mathbf{H}(\boldsymbol{\theta}-\boldsymbol{\theta}^{*})\right\rangle,\\
-\mathcal{R}(\boldsymbol{\theta})
-&=\mathcal{E}(\boldsymbol{\theta})+\frac{\sigma^2}{2}.
+ℛ(\boldsymbol{\theta})
+&=ℰ(\boldsymbol{\theta})+\frac{\sigma^2}{2}.
 \end{aligned}
 ```
 
-The scaling laws describe $`\mathbb{E}[\mathcal{E}(\boldsymbol{\theta}_k)]`$,
+The scaling laws describe $`𝔼[ℰ(\boldsymbol{\theta}_k)]`$,
 where the outer expectation averages over the training randomness. Write
 $`\eta_\beta:=\eta/(1-\beta)`$ for the effective learning rate.
 
 For **SGD**, Eq. (13) gives, within the stable region and for $`k\eta\gtrsim1`$,
 
 ```math
-\mathbb{E}[\mathcal{E}(\boldsymbol{\theta}_k)]
+𝔼[ℰ(\boldsymbol{\theta}_k)]
 \eqsim (\eta k)^{-s}+\frac{\sigma^2}{B}\eta.
 ```
 
@@ -149,7 +149,7 @@ In the **fully overdamped regime**, both momentum methods follow the SGD
 signal–noise tradeoff with the effective learning rate $`\eta_\beta`$:
 
 ```math
-\mathbb{E}[\mathcal{E}(\boldsymbol{\theta}_k)]
+𝔼[ℰ(\boldsymbol{\theta}_k)]
 \eqsim(\eta_\beta k)^{-s}+\frac{\sigma^2}{B}\eta_\beta.
 ```
 
@@ -159,12 +159,12 @@ transient:
 ```math
 \begin{aligned}
 \text{Polyak:}\qquad
-\mathbb{E}[\mathcal{E}(\boldsymbol{\theta}_k)]
-&\eqsim \mathbb{T}_{P}(k)+(\eta_\beta k)^{-s}
+𝔼[ℰ(\boldsymbol{\theta}_k)]
+&\eqsim 𝕋_{P}(k)+(\eta_\beta k)^{-s}
 +\frac{\sigma^2}{B}\eta_\beta,\\
 \text{Nesterov:}\qquad
-\mathbb{E}[\mathcal{E}(\boldsymbol{\theta}_k)]
-&\eqsim \mathbb{T}_{N}(k)+(\eta_\beta k)^{-s}
+𝔼[ℰ(\boldsymbol{\theta}_k)]
+&\eqsim 𝕋_{N}(k)+(\eta_\beta k)^{-s}
 +\frac{\sigma^2}{B}\min\left\{\eta_\beta,\eta_\beta^{1/q}\right\}.
 \end{aligned}
 ```
@@ -172,8 +172,8 @@ transient:
 The transient envelopes satisfy
 
 ```math
-0\leq\mathbb{T}_{P}(k)\lesssim\beta^k,\qquad
-0\leq\mathbb{T}_{N}(k)\lesssim\min\{1,(\eta k)^{-s}\}\beta^k.
+0\leq𝕋_{P}(k)\lesssim\beta^k,\qquad
+0\leq𝕋_{N}(k)\lesssim\min\{1,(\eta k)^{-s}\}\beta^k.
 ```
 
 These terms can be dropped only after the transient has decayed. Polyak's
@@ -197,8 +197,8 @@ hyperparameters while imposing the one-pass constraint. For $`B=D^{b+o(1)}`$,
 $`b\in[0,1)`$, and $`N=D/B`$, define
 
 ```math
-\inf_{(\eta,\beta)\in\mathcal{A}_B}
-\mathbb{E}[\mathcal{E}(\boldsymbol{\theta}_N)]
+\inf_{(\eta,\beta)\in𝒜_B}
+𝔼[ℰ(\boldsymbol{\theta}_N)]
 =D^{-r(b)+o(1)},
 ```
 

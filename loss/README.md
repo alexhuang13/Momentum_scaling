@@ -1,10 +1,10 @@
 # Loss
 
 This folder studies the expected population excess risk
-$`\mathbb{E}[\mathcal{E}(\boldsymbol{\theta}_k)]`$ as a function of optimization
+$`𝔼[ℰ(\boldsymbol{\theta}_k)]`$ as a function of optimization
 step $`k`$ at fixed hyperparameters, separating transient decay, signal learning,
 and the noise floor. Population risk is
-$`\mathcal{R}(\boldsymbol{\theta})=\mathcal{E}(\boldsymbol{\theta})+\sigma^2/2`$.
+$`ℛ(\boldsymbol{\theta})=ℰ(\boldsymbol{\theta})+\sigma^2/2`$.
 See the [risk-dynamics summary](../README.md#2-excess-risk-scaling-laws) for
 the damping regimes and conditions of Theorems 5.1–5.2.
 
