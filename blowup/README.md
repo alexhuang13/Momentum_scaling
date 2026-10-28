@@ -1,7 +1,7 @@
 # Blowup
 
 This folder studies the explicitly time-varying schedule
-$\rho_k=1-1/(k+1)$.
+$\beta_k=1-1/(k+1)$.
 
 | File | What to read or run |
 |---|---|
@@ -15,3 +15,9 @@ write to `blowup/results/generated/`, which is ignored by Git.
 
 Main result: Polyak eventually becomes unstable under the increasing-momentum
 schedule, while Nesterov remains stable over the saved 500,000-step horizon.
+This diagnostic uses time-varying momentum; the constant-momentum theorems
+are not applied to this schedule.
+
+Notation follows the latest paper: $q$ is the spectral exponent and $\beta$ is
+momentum. Historical kernel code and saved artifacts may use `beta` for $q$,
+`rho` for $\beta$, and `K` for the update horizon $N$.
