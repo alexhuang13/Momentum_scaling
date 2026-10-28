@@ -65,7 +65,7 @@ Risk stability means that the expected population risk remains bounded for
 every admissible initialization with finite population risk:
 
 ```math
-\sup_{k\geq0}𝔼[ℛ(\boldsymbol{\theta}_k)]<\infty.
+\sup_{k\geq0}𝔼[ℛ(\boldsymbol{\theta}_k)]\lt \infty.
 ```
 
 Theorem 4.3 gives the following critical-learning-rate scalings for sufficiently
@@ -116,10 +116,10 @@ $`ℛ`$ from the excess risk $`ℰ`$:
 ```math
 \begin{aligned}
 ℛ(\boldsymbol{\theta})
-&=\frac{1}{2}𝔼_{x,y}\left[(f(x;\boldsymbol{\theta})-y)^2\right],\\
+&=\frac{1}{2}𝔼_{x,y}\left[(f(x;\boldsymbol{\theta})-y)^2\right],\\[4pt]
 ℰ(\boldsymbol{\theta})
 &=\frac{1}{2}\left\langle\boldsymbol{\theta}-\boldsymbol{\theta}^{*},
-\mathbf{H}(\boldsymbol{\theta}-\boldsymbol{\theta}^{*})\right\rangle,\\
+\mathbf{H}(\boldsymbol{\theta}-\boldsymbol{\theta}^{*})\right\rangle,\\[4pt]
 ℛ(\boldsymbol{\theta})
 &=ℰ(\boldsymbol{\theta})+\frac{\sigma^2}{2}.
 \end{aligned}
@@ -161,7 +161,7 @@ transient:
 \text{Polyak:}\qquad
 𝔼[ℰ(\boldsymbol{\theta}_k)]
 &\eqsim 𝕋_{P}(k)+(\eta_\beta k)^{-s}
-+\frac{\sigma^2}{B}\eta_\beta,\\
++\frac{\sigma^2}{B}\eta_\beta,\\[4pt]
 \text{Nesterov:}\qquad
 𝔼[ℰ(\boldsymbol{\theta}_k)]
 &\eqsim 𝕋_{N}(k)+(\eta_\beta k)^{-s}
@@ -209,7 +209,7 @@ The transition exponents are
 b_1=\frac{s}{s+1},\qquad
 b_2=\frac{2s+1/q}{2s+1+1/q},\qquad
 b_3=\frac{2s+1}{2s+2},\qquad
-0<b_1<b_2<b_3<1.
+0\lt b_1\lt b_2\lt b_3\lt 1.
 ```
 
 Theorem 6.3 gives the three-regime comparison, with $`r_0=s/(s+1)`$:
@@ -226,23 +226,25 @@ Theorem 6.3 gives the three-regime comparison, with $`r_0=s/(s+1)`$:
 ```math
 r_{\mathrm{SGD}}(b)=
 \begin{cases}
-s/(s+1), & 0\leq b<b_1,\\
-s(1-b), & b_1\leq b<1,
+s/(s+1), & 0\leq b\lt b_1,\\[4pt]
+s(1-b), & b_1\leq b\lt 1,
 \end{cases}
-\qquad
+```
+
+```math
 r_{\mathrm{Polyak}}(b)=
 \begin{cases}
-s/(s+1), & 0\leq b<b_3,\\
-2s(1-b), & b_3\leq b<1.
+s/(s+1), & 0\leq b\lt b_3,\\[4pt]
+2s(1-b), & b_3\leq b\lt 1.
 \end{cases}
 ```
 
 ```math
 r_{\mathrm{Nesterov}}(b)=
 \begin{cases}
-s/(s+1), & 0\leq b<b_1,\\
-\dfrac{s(1+(q-1)b)}{sq+1}, & b_1\leq b<b_2,\\
-2s(1-b), & b_2\leq b<1.
+s/(s+1), & 0\leq b\lt b_1,\\[4pt]
+\dfrac{s(1+(q-1)b)}{sq+1}, & b_1\leq b\lt b_2,\\[4pt]
+2s(1-b), & b_2\leq b\lt 1.
 \end{cases}
 ```
 
